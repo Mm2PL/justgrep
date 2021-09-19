@@ -10,6 +10,8 @@ import (
 )
 
 type arguments struct {
+	url *string
+
 	user        *string
 	userIsRegex *bool
 
@@ -73,6 +75,7 @@ func main() {
 	args.messageRegex = flag.String("regex", "", "Message Regex")
 	args.start = flag.String("start", "", "Start time")
 	args.end = flag.String("end", "", "End time")
+	args.url = flag.String("url", "http://localhost:8025", "Justlog instance URL")
 
 	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
 	flag.Parse()
@@ -88,9 +91,9 @@ func main() {
 
 	var api justgrep.JustlogAPI
 	if *args.user != "" && !(*args.userIsRegex) {
-		api = &justgrep.UserJustlogAPI{User: *args.user, Channel: *args.channel, URL: "https://logs.ivr.fi"}
+		api = &justgrep.UserJustlogAPI{User: *args.user, Channel: *args.channel, URL: *args.url}
 	} else {
-		api = &justgrep.ChannelJustlogAPI{Channel: *args.channel, URL: "https://logs.ivr.fi"}
+		api = &justgrep.ChannelJustlogAPI{Channel: *args.channel, URL: *args.url}
 	}
 
 	download := make(chan *justgrep.Message)
