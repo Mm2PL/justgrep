@@ -60,11 +60,12 @@ func TestNewMessage(t *testing.T) {
 func BenchmarkNewMessage(b *testing.B) {
 	b.ReportAllocs()
 	file, err := os.Open("channel.txt")
-	defer file.Close()
 	if err != nil {
-		fmt.Println("failed to open file", err)
-		os.Exit(1)
+		fmt.Println("You need to have a large logs of IRC messages named channel.txt for this benchmark to work.")
+		fmt.Println("Failed to open file", err)
+		b.Failed()
 	}
+	defer file.Close()
 	reader := bufio.NewReader(file)
 	for {
 		line, _, err := reader.ReadLine()
