@@ -10,6 +10,7 @@ import (
 type Message struct {
 	Raw       string
 	Prefix    string
+	User      string
 	Args      []string
 	Action    string
 	Tags      map[string]string
@@ -21,7 +22,7 @@ func (m Message) String() string {
 }
 
 func NewMessage(text string) *Message {
-	output := &Message{}
+	output := &Message{Raw: text}
 	cpy := text
 	if cpy[0] == '@' {
 		cpy = cpy[1:]
@@ -41,27 +42,35 @@ func NewMessage(text string) *Message {
 		prefix = cpy[1:prefixIdx]
 		cpy = cpy[prefixIdx+1:]
 		output.Prefix = prefix
+		accountSep := strings.Index(prefix, "!")
+		if accountSep != -1 {
+			output.User = prefix[:accountSep]
+		}
 	}
 	actionIndex := strings.Index(cpy, " ")
-	output.Action = cpy[:actionIndex]
-	cpy = cpy[actionIndex+1:]
-	for {
-		nextSpace := strings.Index(cpy, " ")
-		if nextSpace == -1 {
-			// has to be last arg!
-			nextSpace = len(cpy) - 1
+	if actionIndex == -1 {
+		output.Action = cpy
+	} else {
+		output.Action = cpy[:actionIndex]
+		cpy = cpy[actionIndex+1:]
+		for {
+			nextSpace := strings.Index(cpy, " ")
+			if nextSpace == -1 {
+				// has to be last arg!
+				nextSpace = len(cpy) - 1
+			}
+			if cpy == "" {
+				break
+			}
+			currentArg := cpy[:nextSpace]
+			if currentArg[0] == ':' {
+				// last argument.
+				output.Args = append(output.Args, cpy[1:])
+				break
+			}
+			output.Args = append(output.Args, currentArg)
+			cpy = cpy[nextSpace+1:]
 		}
-		if cpy == "" {
-			break
-		}
-		currentArg := cpy[:nextSpace]
-		if currentArg[0] == ':' {
-			// last argument.
-			output.Args = append(output.Args, cpy[1:])
-			break
-		}
-		output.Args = append(output.Args, currentArg)
-		cpy = cpy[nextSpace+1:]
 	}
 	ts, hasTs := output.Tags["tmi-sent-ts"]
 	if hasTs {
