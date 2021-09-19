@@ -10,14 +10,21 @@ import (
 )
 
 type arguments struct {
-	user         *string
+	user        *string
+	userIsRegex *bool
+
 	channel      *string
 	messageRegex *string
-	start        *string
-	end          *string
+
+	msgOnly *bool
+
+	start *string
+	end   *string
 
 	startTime time.Time
 	endTime   time.Time
+
+	verbose *bool
 }
 
 func (args *arguments) validateFlags() (valid bool) {
@@ -54,13 +61,20 @@ func (args *arguments) validateFlags() (valid bool) {
 	args.endTime = endTime
 	return
 }
+
 func main() {
 	args := &arguments{}
 	args.user = flag.String("user", "", "Target user")
+	args.userIsRegex = flag.Bool("uregex", false, "Is the -user option a regex?")
+
+	args.msgOnly = flag.Bool("msg-only", false, "Only want chat messages (PRIVMSGs).")
+
 	args.channel = flag.String("channel", "", "Target channel")
 	args.messageRegex = flag.String("regex", "", "Message Regex")
 	args.start = flag.String("start", "", "Start time")
 	args.end = flag.String("end", "", "End time")
+
+	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
 	flag.Parse()
 	flagsAreValid := args.validateFlags()
 	if !flagsAreValid {
@@ -73,7 +87,7 @@ func main() {
 	}
 
 	var api justgrep.JustlogAPI
-	if *args.user != "" {
+	if *args.user != "" && !(*args.userIsRegex) {
 		api = &justgrep.UserJustlogAPI{User: *args.user, Channel: *args.channel, URL: "https://logs.ivr.fi"}
 	} else {
 		api = &justgrep.ChannelJustlogAPI{Channel: *args.channel, URL: "https://logs.ivr.fi"}
@@ -81,18 +95,28 @@ func main() {
 
 	download := make(chan *justgrep.Message)
 
+	var userRegex *regexp.Regexp
+	matchMode := justgrep.DontMatch
+	if *args.userIsRegex {
+		matchMode = justgrep.MatchRegex
+		userRegex, err = regexp.Compile(*args.user)
+		if err != nil {
+			fmt.Printf("Error while compiling your username regex: %s\n", err)
+		}
+	}
 	filter := justgrep.Filter{
 		StartDate: args.startTime,
 		EndDate:   args.endTime,
 
-		HasMessageType: true,
+		HasMessageType: *args.msgOnly,
 		MessageType:    "PRIVMSG",
 
 		HasMessageRegex: true,
 		MessageRegex:    messageExpr,
 
-		UserMatchType: justgrep.DontMatch,
-		//UserName:      "mm2pl",
+		UserMatchType: matchMode,
+		UserName:      *args.user,
+		UserRegex:     userRegex,
 	}
 	totalResults := make([]int, justgrep.ResultCount)
 	nextDate := args.endTime
@@ -101,6 +125,7 @@ func main() {
 		nextDate, err = justgrep.FetchForDate(api, nextDate, download)
 		if err != nil {
 			fmt.Printf("Error while fetching logs: %s\n", err)
+			break
 		}
 
 		filtered := make(chan *justgrep.Message)
@@ -124,8 +149,10 @@ func main() {
 			break
 		}
 	}
-	fmt.Println("Summary:")
-	for result, count := range totalResults {
-		fmt.Printf("  %s  %d\n", justgrep.FilterResult(result), count)
+	if *args.verbose {
+		fmt.Println("Summary:")
+		for result, count := range totalResults {
+			fmt.Printf("  %s  %d\n", justgrep.FilterResult(result), count)
+		}
 	}
 }
