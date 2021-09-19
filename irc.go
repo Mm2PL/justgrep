@@ -63,9 +63,12 @@ func NewMessage(text string) *Message {
 		output.Args = append(output.Args, currentArg)
 		cpy = cpy[nextSpace+1:]
 	}
-	parsedInt, err := strconv.ParseInt(output.Tags["tmi-sent-ts"], 10, 64)
-	if err == nil {
-		output.Timestamp = time.Unix(parsedInt / 1000, parsedInt % 1000 * 1000000)
+	ts, hasTs := output.Tags["tmi-sent-ts"]
+	if hasTs {
+		parsedInt, err := strconv.ParseInt(ts, 10, 64)
+		if err == nil {
+			output.Timestamp = time.Unix(parsedInt/1000, parsedInt%1000*1000000)
+		}
 	}
 	return output
 }
