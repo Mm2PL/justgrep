@@ -37,7 +37,6 @@ func fetch(url string, output chan *Message) error {
 
 func FetchForDate(api JustlogAPI, date time.Time, output chan *Message) (time.Time, error) {
 	url := api.MakeURL(date)
-	fmt.Printf("Fetching %s from %s\n", date.Format(time.RFC3339), url)
 	err := fetch(url, output)
 	if err != nil {
 		return time.Time{}, err
