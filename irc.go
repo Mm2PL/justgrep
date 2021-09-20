@@ -38,8 +38,7 @@ func NewMessage(text string) *Message {
 	}
 	if cpy[0] == ':' {
 		prefixIdx := strings.Index(cpy, " ")
-		var prefix string // := doesn't work here?
-		prefix = cpy[1:prefixIdx]
+		prefix := cpy[1:prefixIdx]
 		cpy = cpy[prefixIdx+1:]
 		output.Prefix = prefix
 		accountSep := strings.Index(prefix, "!")
