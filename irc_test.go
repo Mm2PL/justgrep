@@ -15,7 +15,7 @@ func assert(t *testing.T, what string, have interface{}, expect interface{}) {
 
 func assertStrSlc(t *testing.T, what string, have []string, expect []string) {
 	if len(have) != len(expect) {
-		t.Errorf("assertion on %s failed: lenght doesn't match, have %d, expected %d: %q vs %q", what, len(have), len(expect), have, expect)
+		t.Errorf("assertion on %s failed: length doesn't match, have %d, expected %d: %q vs %q", what, len(have), len(expect), have, expect)
 	}
 	for i, elem := range have {
 		if elem != expect[i] {
@@ -25,7 +25,7 @@ func assertStrSlc(t *testing.T, what string, have []string, expect []string) {
 }
 func assertStrMap(t *testing.T, what string, have map[string]string, expect map[string]string) {
 	if len(have) != len(expect) {
-		t.Errorf("assertion on %s failed: lenght doesn't match, have %d, expected %d: %q vs %q", what, len(have), len(expect), have, expect)
+		t.Errorf("assertion on %s failed: length doesn't match, have %d, expected %d: %q vs %q", what, len(have), len(expect), have, expect)
 	}
 	for key, value := range have {
 		if value != expect[key] {
