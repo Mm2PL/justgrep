@@ -2,6 +2,7 @@ package justgrep
 
 import (
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -27,6 +28,7 @@ type Filter struct {
 	UserMatchType UserMatchType
 	UserRegex     *regexp.Regexp
 	UserName      string
+	Count         int
 }
 type FilterResult uint8
 
@@ -36,6 +38,7 @@ const (
 	ResultType
 	ResultContent
 	ResultUser
+	ResultMaxCountReached
 
 	ResultCount
 )
@@ -52,17 +55,23 @@ func (res FilterResult) String() string {
 		return "content"
 	case ResultUser:
 		return "user"
+	case ResultMaxCountReached:
+		return "limit reached"
 	default:
-		return string(res)
+		return strconv.FormatInt(int64(res), 10)
 	}
 }
 
-func (f Filter) StreamFilter(input chan *Message, output chan *Message) []int {
+func (f Filter) StreamFilter(input chan *Message, output chan *Message, cancelled *bool) []int {
 	results := make([]int, ResultCount)
 	for {
+		if f.Count != 0 && results[ResultOk] >= f.Count {
+			results[ResultMaxCountReached] = 1
+			*cancelled = true
+			break
+		}
 		msg := <-input
 		if msg == nil {
-
 			break
 		}
 		result := f.Filter(msg)

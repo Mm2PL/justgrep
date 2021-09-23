@@ -17,6 +17,7 @@ type arguments struct {
 
 	channel      *string
 	messageRegex *string
+	maxResults   *int
 
 	msgOnly *bool
 
@@ -76,6 +77,7 @@ func main() {
 	args.start = flag.String("start", "", "Start time")
 	args.end = flag.String("end", "", "End time")
 	args.url = flag.String("url", "http://localhost:8025", "Justlog instance URL")
+	args.maxResults = flag.Int("max", 0, "How many results do you want? 0 for unlimited")
 
 	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
 	flag.Parse()
@@ -122,12 +124,13 @@ func main() {
 		UserMatchType: matchMode,
 		UserName:      *args.user,
 		UserRegex:     userRegex,
+		Count:         *args.maxResults,
 	}
 	totalResults := make([]int, justgrep.ResultCount)
 	nextDate := args.endTime
-
+	cancelled := false
 	for {
-		nextDate, err = justgrep.FetchForDate(api, nextDate, download)
+		nextDate, err = justgrep.FetchForDate(api, nextDate, download, &cancelled)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error while fetching logs: %s\n", err)
 			break
@@ -136,7 +139,7 @@ func main() {
 		filtered := make(chan *justgrep.Message)
 		var results []int
 		go func() {
-			results = filter.StreamFilter(download, filtered)
+			results = filter.StreamFilter(download, filtered, &cancelled)
 			filtered <- nil
 		}()
 		for {

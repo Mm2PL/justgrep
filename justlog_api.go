@@ -12,7 +12,7 @@ type JustlogAPI interface {
 	NextLogFile(currentDate time.Time) time.Time
 }
 
-func fetch(url string, output chan *Message) error {
+func fetch(url string, output chan *Message, cancel *bool) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -29,15 +29,18 @@ func fetch(url string, output chan *Message) error {
 
 		for scanner.Scan() {
 			output <- NewMessage(scanner.Text())
+			if *cancel {
+				break
+			}
 		}
 		output <- nil
 	}()
 	return nil
 }
 
-func FetchForDate(api JustlogAPI, date time.Time, output chan *Message) (time.Time, error) {
+func FetchForDate(api JustlogAPI, date time.Time, output chan *Message, canceled *bool) (time.Time, error) {
 	url := api.MakeURL(date)
-	err := fetch(url, output)
+	err := fetch(url, output, canceled)
 	if err != nil {
 		return time.Time{}, err
 	} else {
