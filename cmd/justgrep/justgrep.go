@@ -158,9 +158,9 @@ func main() {
 		}
 	}
 	if *args.verbose {
-		_, _ = fmt.Fprintf(os.Stderr, "Summary:")
+		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
 		for result, count := range totalResults {
-			_, _ = fmt.Fprintf(os.Stderr, "  %s  %d\n", justgrep.FilterResult(result), count)
+			_, _ = fmt.Fprintf(os.Stderr, " - %s => %d\n", justgrep.FilterResult(result), count)
 		}
 	}
 }
