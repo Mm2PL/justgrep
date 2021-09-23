@@ -30,6 +30,19 @@ type arguments struct {
 	verbose *bool
 }
 
+func parseTime(input string) (output time.Time, err error) {
+	output, err = time.Parse("2006-01-02 15:04:05", input)
+	if err == nil {
+		return
+	}
+	output, err = time.Parse(time.RFC3339, input)
+	if err == nil {
+		return
+	}
+
+	return time.Time{}, err
+}
+
 func (args *arguments) validateFlags() (valid bool) {
 	valid = true
 	if *args.channel == "" {
@@ -49,14 +62,14 @@ func (args *arguments) validateFlags() (valid bool) {
 		return
 	}
 
-	startTime, err := time.Parse("2006-01-02 15:04:05", *args.start)
+	startTime, err := parseTime(*args.start)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "-start: Invalid time: %s: %s\n", *args.start, err)
 		valid = false
 	}
 	args.startTime = startTime
 
-	endTime, err := time.Parse("2006-01-02 15:04:05", *args.end)
+	endTime, err := parseTime(*args.end)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "-end: Invalid time: %s: %s\n", *args.end, err)
 		valid = false

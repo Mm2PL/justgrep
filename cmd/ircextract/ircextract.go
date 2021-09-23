@@ -42,7 +42,7 @@ func main() {
 	writer := csv.NewWriter(os.Stdout)
 	for scanner.Scan() {
 		msg := justgrep.NewMessage(scanner.Text())
-		line := make([]string, 0)
+		line := make([]string, 0, 16)
 		meaningful := false
 		if *args.timestamp {
 			line = append(line, msg.Timestamp.Format(time.RFC3339))
