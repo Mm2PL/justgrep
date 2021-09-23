@@ -32,15 +32,15 @@ type arguments struct {
 func (args *arguments) validateFlags() (valid bool) {
 	valid = true
 	if *args.channel == "" {
-		fmt.Println("You need to pass the -channel argument.")
+		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -channel argument.")
 		valid = false
 	}
 	if *args.start == "" {
-		fmt.Println("You need to pass the -start argument.")
+		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -start argument.")
 		valid = false
 	}
 	if *args.end == "" {
-		fmt.Println("You need to pass the -end argument.")
+		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -end argument.")
 		valid = false
 	}
 	// show missing arguments and that's it
@@ -50,14 +50,14 @@ func (args *arguments) validateFlags() (valid bool) {
 
 	startTime, err := time.Parse("2006-01-02 15:04:05", *args.start)
 	if err != nil {
-		fmt.Printf("-start: Invalid time: %s: %s\n", *args.start, err)
+		_, _ = fmt.Fprintf(os.Stderr, "-start: Invalid time: %s: %s\n", *args.start, err)
 		valid = false
 	}
 	args.startTime = startTime
 
 	endTime, err := time.Parse("2006-01-02 15:04:05", *args.end)
 	if err != nil {
-		fmt.Printf("-end: Invalid time: %s: %s\n", *args.end, err)
+		_, _ = fmt.Fprintf(os.Stderr, "-end: Invalid time: %s: %s\n", *args.end, err)
 		valid = false
 	}
 	args.endTime = endTime
@@ -86,7 +86,8 @@ func main() {
 
 	messageExpr, err := regexp.Compile(*args.messageRegex)
 	if err != nil {
-		fmt.Printf("Error while compiling your message regex: %s\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error while compiling your message regex: %s\n", err)
+		return
 	}
 
 	var api justgrep.JustlogAPI
@@ -104,7 +105,8 @@ func main() {
 		matchMode = justgrep.MatchRegex
 		userRegex, err = regexp.Compile(*args.user)
 		if err != nil {
-			fmt.Printf("Error while compiling your username regex: %s\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Error while compiling your username regex: %s\n", err)
+			return
 		}
 	}
 	filter := justgrep.Filter{
@@ -127,7 +129,7 @@ func main() {
 	for {
 		nextDate, err = justgrep.FetchForDate(api, nextDate, download)
 		if err != nil {
-			fmt.Printf("Error while fetching logs: %s\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Error while fetching logs: %s\n", err)
 			break
 		}
 
@@ -153,9 +155,9 @@ func main() {
 		}
 	}
 	if *args.verbose {
-		fmt.Println("Summary:")
+		_, _ = fmt.Fprintf(os.Stderr, "Summary:")
 		for result, count := range totalResults {
-			fmt.Printf("  %s  %d\n", justgrep.FilterResult(result), count)
+			_, _ = fmt.Fprintf(os.Stderr, "  %s  %d\n", justgrep.FilterResult(result), count)
 		}
 	}
 }
