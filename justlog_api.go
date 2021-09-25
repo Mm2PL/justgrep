@@ -2,6 +2,7 @@ package justgrep
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -80,4 +81,31 @@ func (api ChannelJustlogAPI) NextLogFile(currentDate time.Time) time.Time {
 
 func (api ChannelJustlogAPI) MakeURL(date time.Time) string {
 	return fmt.Sprintf("%s/channel/%s/%d/%d/%d?raw&reverse", api.URL, api.Channel, date.Year(), date.Month(), date.Day())
+}
+type channelsResp struct {
+	Channels []struct {
+		UserID string `json:"userID"`
+		Name   string `json:"name"`
+	} `json:"channels"`
+}
+func GetChannelsFromJustLog(url string) ([]string, error) {
+	req, err := http.NewRequest("GET", url + "/channels", nil)
+	if err != nil {
+		return nil, err
+	}
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	output := channelsResp{}
+	err = json.NewDecoder(resp.Body).Decode(&output)
+	if err != nil {
+		return nil, err
+	}
+	channels := make([]string, 0, 32)
+	for _, channel := range output.Channels {
+		channels = append(channels, channel.Name)
+	}
+	return channels, nil
 }

@@ -6,6 +6,7 @@ import (
 	"justgrep"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -27,7 +28,8 @@ type arguments struct {
 	startTime time.Time
 	endTime   time.Time
 
-	verbose *bool
+	verbose   *bool
+	recursive *bool
 }
 
 func parseTime(input string) (output time.Time, err error) {
@@ -93,6 +95,7 @@ func main() {
 	args.maxResults = flag.Int("max", 0, "How many results do you want? 0 for unlimited")
 
 	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
+	args.recursive = flag.Bool("r", false, "Run search on all channels.")
 	flag.Parse()
 	flagsAreValid := args.validateFlags()
 	if !flagsAreValid {
@@ -103,13 +106,6 @@ func main() {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error while compiling your message regex: %s\n", err)
 		return
-	}
-
-	var api justgrep.JustlogAPI
-	if *args.user != "" && !(*args.userIsRegex) {
-		api = &justgrep.UserJustlogAPI{User: *args.user, Channel: *args.channel, URL: *args.url}
-	} else {
-		api = &justgrep.ChannelJustlogAPI{Channel: *args.channel, URL: *args.url}
 	}
 
 	download := make(chan *justgrep.Message)
@@ -140,6 +136,37 @@ func main() {
 		Count:         *args.maxResults,
 	}
 	totalResults := make([]int, justgrep.ResultCount)
+	var channelsToSearch []string
+	if !*args.recursive {
+		channelsToSearch = strings.Split(*args.channel, ",")
+	} else {
+		channelsToSearch, err = justgrep.GetChannelsFromJustLog(*args.url)
+		if err != nil {
+			_, err := fmt.Fprintf(os.Stderr, "Error while fetching channels from justlog: %s", err)
+			if err != nil {
+				return
+			}
+			os.Exit(1)
+		}
+	}
+	for _, channel := range channelsToSearch {
+		var api justgrep.JustlogAPI
+		if *args.user != "" && !(*args.userIsRegex) {
+			api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: *args.url}
+		} else {
+			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: *args.url}
+		}
+		searchLogs(args, err, api, download, filter, totalResults)
+	}
+	if *args.verbose {
+		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
+		for result, count := range totalResults {
+			_, _ = fmt.Fprintf(os.Stderr, " - %s => %d\n", justgrep.FilterResult(result), count)
+		}
+	}
+}
+
+func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download chan *justgrep.Message, filter justgrep.Filter, totalResults []int) {
 	nextDate := args.endTime
 	cancelled := false
 	for {
@@ -168,12 +195,6 @@ func main() {
 		}
 		if nextDate.Before(args.startTime) {
 			break
-		}
-	}
-	if *args.verbose {
-		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
-		for result, count := range totalResults {
-			_, _ = fmt.Fprintf(os.Stderr, " - %s => %d\n", justgrep.FilterResult(result), count)
 		}
 	}
 }
