@@ -47,8 +47,8 @@ func parseTime(input string) (output time.Time, err error) {
 
 func (args *arguments) validateFlags() (valid bool) {
 	valid = true
-	if *args.channel == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -channel argument.")
+	if *args.channel == "" || *args.recursive {
+		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -channel or -r (recursive) arguments.")
 		valid = false
 	}
 	if *args.start == "" {
