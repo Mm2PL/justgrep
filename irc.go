@@ -8,13 +8,13 @@ import (
 )
 
 type Message struct {
-	Raw       string
-	Prefix    string
-	User      string
-	Args      []string
-	Action    string
-	Tags      map[string]string
-	Timestamp time.Time
+	Raw       string            `json:"raw,omitempty"`
+	Prefix    string            `json:"prefix,omitempty"`
+	User      string            `json:"user,omitempty"`
+	Args      []string          `json:"args,omitempty"`
+	Action    string            `json:"action,omitempty"`
+	Tags      map[string]string `json:"tags,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
 }
 
 func (m Message) String() string {
