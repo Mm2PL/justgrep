@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"justgrep"
+	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -149,7 +150,10 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	for _, channel := range channelsToSearch {
+	for currentIndex, channel := range channelsToSearch {
+		if *args.verbose {
+			_, _ = fmt.Fprintf(os.Stderr, "Now scanning #%s %d/%d\n", channel, currentIndex+1, len(channelsToSearch))
+		}
 		var api justgrep.JustlogAPI
 		if *args.user != "" && !(*args.userIsRegex) {
 			api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: *args.url}
@@ -166,10 +170,42 @@ func main() {
 	}
 }
 
+const progressSize = 50
+
+func makeProgressBar(totalSteps float64, stepsLeft float64) string {
+	var fracDone float64
+	if totalSteps == 0 {
+		fracDone = 0
+		stepsLeft = 1
+		totalSteps = 2
+	} else {
+		fracDone = 1 - stepsLeft/totalSteps
+	}
+	done := strings.Repeat("=", int(math.Floor(progressSize*fracDone)))
+	left := strings.Repeat(" ", int(math.Ceil(progressSize*(1-fracDone))))
+	return fmt.Sprintf("[%s>%s] %.2f%%", done, left, fracDone*100)
+}
 func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download chan *justgrep.Message, filter justgrep.Filter, totalResults []int) {
 	nextDate := args.endTime
 	cancelled := false
+	var channel string
+	step := api.GetApproximateOffset()
+	switch api.(type) {
+	default:
+		channel = fmt.Sprintf("[unknown] (%t)", api)
+		step = time.Hour * 24
+	case *justgrep.UserJustlogAPI:
+		channel = api.(*justgrep.UserJustlogAPI).Channel
+	case *justgrep.ChannelJustlogAPI:
+		channel = api.(*justgrep.ChannelJustlogAPI).Channel
+	}
+	totalSteps := float64(args.endTime.Sub(args.startTime) / step)
+
 	for {
+		stepsLeft := float64(nextDate.Sub(args.startTime) / step)
+		if *args.verbose {
+			_, _ = fmt.Fprintf(os.Stderr, "Found %d matching messages... Downloading #%s at %s %s.\n", totalResults[justgrep.ResultOk], channel, nextDate.Format("2006-01-02"), makeProgressBar(totalSteps, stepsLeft))
+		}
 		nextDate, err = justgrep.FetchForDate(api, nextDate, download, &cancelled)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error while fetching logs: %s\n", err)

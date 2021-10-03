@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
 type JustlogAPI interface {
 	MakeURL(date time.Time) string
 	NextLogFile(currentDate time.Time) time.Time
+	GetApproximateOffset() time.Duration
 }
 
 func fetch(url string, output chan *Message, cancel *bool) error {
@@ -75,6 +77,10 @@ func (api UserJustlogAPI) MakeURL(date time.Time) string {
 	return fmt.Sprintf("%s/channel/%s/user/%s/%d/%d?raw&reverse", api.URL, api.Channel, api.User, date.Year(), date.Month())
 }
 
+func (api UserJustlogAPI) GetApproximateOffset() time.Duration {
+	return time.Hour * 24 * 30
+}
+
 type ChannelJustlogAPI struct {
 	JustlogAPI
 	Channel string
@@ -114,4 +120,8 @@ func GetChannelsFromJustLog(url string) ([]string, error) {
 		channels = append(channels, channel.Name)
 	}
 	return channels, nil
+}
+
+func (api ChannelJustlogAPI) GetApproximateOffset() time.Duration {
+	return time.Hour * 24
 }
