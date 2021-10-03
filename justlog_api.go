@@ -29,7 +29,13 @@ func fetch(url string, output chan *Message, cancel *bool) error {
 		scanner := bufio.NewScanner(resp.Body)
 
 		for scanner.Scan() {
-			output <- NewMessage(scanner.Text())
+			msg, err := NewMessage(scanner.Text())
+			if err != nil {
+				output <- nil
+				_, _ = fmt.Fprintf(os.Stderr, "Error while fetching from %s: %s\n", url, err)
+				break
+			}
+			output <- msg
 			if *cancel {
 				break
 			}

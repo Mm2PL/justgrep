@@ -1,6 +1,7 @@
 package justgrep
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -21,13 +22,19 @@ func (m Message) String() string {
 	return fmt.Sprintf("Message{Prefix: %q, Action: %q, Args: %q, Timestamp: %s}", m.Prefix, m.Action, m.Args, m.Timestamp)
 }
 
-func NewMessage(text string) *Message {
+func NewMessage(text string) (*Message, error) {
+	if len(text) == 0 {
+		return nil, errors.New("parser error: empty input")
+	}
 	output := &Message{Raw: text}
 	cpy := text
 	if cpy[0] == '@' {
 		cpy = cpy[1:]
 		// has tags
 		idx := strings.Index(cpy, " ")
+		if idx == -1 {
+			return nil, errors.New("parser error: unable to find a space after tags, looks like input was trimmed")
+		}
 		tagsRaw := cpy[:idx]
 		output.Tags = make(map[string]string, 16)
 		for _, pair := range strings.Split(tagsRaw, ";") {
@@ -38,6 +45,9 @@ func NewMessage(text string) *Message {
 	}
 	if cpy[0] == ':' {
 		prefixIdx := strings.Index(cpy, " ")
+		if prefixIdx == -1 {
+			return nil, errors.New("parser error: unable to find a space after the prefix, looks like input was trimmed")
+		}
 		prefix := cpy[1:prefixIdx]
 		cpy = cpy[prefixIdx+1:]
 		output.Prefix = prefix
@@ -74,11 +84,21 @@ func NewMessage(text string) *Message {
 	ts, hasTs := output.Tags["tmi-sent-ts"]
 	if hasTs {
 		parsedInt, err := strconv.ParseInt(ts, 10, 64)
-		if err == nil {
-			output.Timestamp = time.Unix(parsedInt/1000, parsedInt%1000*1000000)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("parser error: unable to parse time (@tmi-sent-ts): %q: %s", ts, err))
+		}
+		output.Timestamp = time.Unix(parsedInt/1000, parsedInt%1000*1000000)
+	} else {
+		ts, hasTs = output.Tags["time"]
+		if hasTs {
+			stamp, err := time.Parse(time.RFC3339, ts)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("parser error: unable to parse time (@time): %q: %s", ts, err))
+			}
+			output.Timestamp = stamp
 		}
 	}
-	return output
+	return output, nil
 }
 
 func unescapeValue(s string) string {

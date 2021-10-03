@@ -41,7 +41,11 @@ func main() {
 
 	writer := csv.NewWriter(os.Stdout)
 	for scanner.Scan() {
-		msg := justgrep.NewMessage(scanner.Text())
+		msg, err := justgrep.NewMessage(scanner.Text())
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Failed to irc parse message: %s\n", err)
+			os.Exit(1)
+		}
 		line := make([]string, 0, 16)
 		meaningful := false
 		if *args.timestamp {

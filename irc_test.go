@@ -35,7 +35,8 @@ func assertStrMap(t *testing.T, what string, have map[string]string, expect map[
 }
 
 func TestNewMessage(t *testing.T) {
-	m := NewMessage("@badge-info=subscriber/15;badges=subscriber/12,glhf-pledge/1;color=#DAA520;display-name=Mm2PL;emotes=;flags=;id=1d7e0b34-fe74-4895-92ae-dd912046e637;mod=0;room-id=11148817;subscriber=1;tmi-sent-ts=1632058935165;turbo=0;user-id=117691339;user-type= :mm2pl!mm2pl@mm2pl.tmi.twitch.tv PRIVMSG #pajlada :-tags")
+	m, err := NewMessage("@badge-info=subscriber/15;badges=subscriber/12,glhf-pledge/1;color=#DAA520;display-name=Mm2PL;emotes=;flags=;id=1d7e0b34-fe74-4895-92ae-dd912046e637;mod=0;room-id=11148817;subscriber=1;tmi-sent-ts=1632058935165;turbo=0;user-id=117691339;user-type= :mm2pl!mm2pl@mm2pl.tmi.twitch.tv PRIVMSG #pajlada :-tags")
+	assert(t, "error", err, nil)
 	assert(t, "Action", m.Action, "PRIVMSG")
 	assert(t, "Prefix", m.Prefix, "mm2pl!mm2pl@mm2pl.tmi.twitch.tv")
 	assertStrSlc(t, "Args", m.Args, []string{"#pajlada", "-tags"})
@@ -72,6 +73,6 @@ func BenchmarkNewMessage(b *testing.B) {
 		if err != nil {
 			break
 		}
-		_ = NewMessage(string(line))
+		_, _ = NewMessage(string(line))
 	}
 }
