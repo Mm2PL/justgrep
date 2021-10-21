@@ -1,1 +1,3 @@
-module "justgrep"
+module justgrep
+
+go 1.16
