@@ -250,7 +250,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 		for result, count := range results {
 			totalResults[result] += count
 		}
-		if nextDate.Before(args.startTime) {
+		if nextDate.Before(args.startTime) || results[justgrep.ResultMaxCountReached] != 0 {
 			break
 		}
 	}
