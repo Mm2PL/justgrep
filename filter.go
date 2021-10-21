@@ -26,9 +26,13 @@ type Filter struct {
 	MessageRegex    *regexp.Regexp
 
 	UserMatchType UserMatchType
-	UserRegex     *regexp.Regexp
-	UserName      string
-	Count         int
+
+	UserRegex        *regexp.Regexp
+	NegativeUserRegex *regexp.Regexp
+	UserName         string
+	NegativeUserName string
+
+	Count int
 }
 type FilterResult uint8
 
@@ -102,11 +106,19 @@ func (f Filter) Filter(msg *Message) FilterResult {
 	case DontMatch:
 		break
 	case MatchRegex:
-		if !f.UserRegex.MatchString(msg.User) {
+		if f.UserName != "" && !f.UserRegex.MatchString(msg.User) {
+			return ResultUser
+		}
+
+		if f.NegativeUserName != "" && f.NegativeUserRegex.MatchString(msg.User) {
 			return ResultUser
 		}
 	case MatchExact:
-		if f.UserName != msg.User {
+		if f.UserName != "" && f.UserName != msg.User {
+			return ResultUser
+		}
+
+		if f.NegativeUserName != "" && f.NegativeUserName == msg.User {
 			return ResultUser
 		}
 	}

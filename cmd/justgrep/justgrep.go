@@ -15,6 +15,7 @@ type arguments struct {
 	url *string
 
 	user        *string
+	notUser     *string
 	userIsRegex *bool
 
 	channel      *string
@@ -38,6 +39,10 @@ func parseTime(input string) (output time.Time, err error) {
 	if err == nil {
 		return
 	}
+	output, err = time.Parse("2006-01-02 15:04:05-07:00", input)
+	if err == nil {
+		return
+	}
 	output, err = time.Parse(time.RFC3339, input)
 	if err == nil {
 		return
@@ -46,7 +51,7 @@ func parseTime(input string) (output time.Time, err error) {
 	return time.Time{}, err
 }
 
-func (args *arguments) validateFlags() (valid bool) {
+func (args *arguments) validateAndProcessFlags() (valid bool) {
 	valid = true
 	if *args.channel == "" && !*args.recursive {
 		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -channel or -r (recursive) arguments.")
@@ -84,6 +89,7 @@ func (args *arguments) validateFlags() (valid bool) {
 func main() {
 	args := &arguments{}
 	args.user = flag.String("user", "", "Target user")
+	args.notUser = flag.String("notuser", "", "Negative match on username")
 	args.userIsRegex = flag.Bool("uregex", false, "Is the -user option a regex?")
 
 	args.msgOnly = flag.Bool("msg-only", false, "Only want chat messages (PRIVMSGs).")
@@ -98,7 +104,7 @@ func main() {
 	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
 	args.recursive = flag.Bool("r", false, "Run search on all channels.")
 	flag.Parse()
-	flagsAreValid := args.validateFlags()
+	flagsAreValid := args.validateAndProcessFlags()
 	if !flagsAreValid {
 		os.Exit(1)
 	}
@@ -112,12 +118,22 @@ func main() {
 	download := make(chan *justgrep.Message)
 
 	var userRegex *regexp.Regexp
+	var negativeRegex *regexp.Regexp
 	matchMode := justgrep.DontMatch
+	if *args.user != "" || *args.notUser != "" {
+		matchMode = justgrep.MatchExact
+	}
+
 	if *args.userIsRegex {
 		matchMode = justgrep.MatchRegex
 		userRegex, err = regexp.Compile(*args.user)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error while compiling your username regex: %s\n", err)
+			return
+		}
+		negativeRegex, err = regexp.Compile(*args.notUser)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error while compiling your negative username regex: %s\n", err)
 			return
 		}
 	}
@@ -132,9 +148,14 @@ func main() {
 		MessageRegex:    messageExpr,
 
 		UserMatchType: matchMode,
-		UserName:      *args.user,
-		UserRegex:     userRegex,
-		Count:         *args.maxResults,
+
+		UserName:         *args.user,
+		NegativeUserName: *args.notUser,
+
+		NegativeUserRegex: negativeRegex,
+		UserRegex:         userRegex,
+
+		Count: *args.maxResults,
 	}
 	totalResults := make([]int, justgrep.ResultCount)
 	var channelsToSearch []string
