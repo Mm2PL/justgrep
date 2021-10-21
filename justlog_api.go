@@ -94,6 +94,7 @@ func (api ChannelJustlogAPI) NextLogFile(currentDate time.Time) time.Time {
 func (api ChannelJustlogAPI) MakeURL(date time.Time) string {
 	return fmt.Sprintf("%s/channel/%s/%d/%d/%d?raw&reverse", api.URL, api.Channel, date.Year(), date.Month(), date.Day())
 }
+
 type channelsResp struct {
 	Channels []struct {
 		UserID string `json:"userID"`
