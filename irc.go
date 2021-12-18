@@ -38,8 +38,11 @@ func NewMessage(text string) (*Message, error) {
 		tagsRaw := cpy[:idx]
 		output.Tags = make(map[string]string, 16)
 		for _, pair := range strings.Split(tagsRaw, ";") {
-			splitPair := strings.Split(pair, "=")
-			output.Tags[splitPair[0]] = unescapeValue(splitPair[1])
+			equalsIdx := strings.IndexRune(pair, '=')
+			if equalsIdx == -1 || len(pair) <= equalsIdx {
+				return nil, errors.New("parser error: invalid tag key value pair")
+			}
+			output.Tags[pair[:equalsIdx]] = unescapeValue(pair[equalsIdx+1:])
 		}
 		cpy = cpy[idx+1:]
 	}
@@ -103,25 +106,24 @@ func NewMessage(text string) (*Message, error) {
 
 func unescapeValue(s string) string {
 	nextEscaped := false
-	output := ""
-	for _, chr := range s {
+	unescaper := func(r rune) rune {
 		if nextEscaped {
-			switch chr {
+			switch r {
 			case ':':
-				output += ";"
+				return ';'
 			case 'r':
-				output += "\r"
+				return '\r'
 			case 'n':
-				output += "\n"
+				return '\n'
 			default:
-				output += "\\" + string(chr)
+				return r
 			}
-			nextEscaped = false
-		} else if chr == '\\' {
+		} else if r == '\\' {
 			nextEscaped = true
+			return -1
 		} else {
-			output += string(chr)
+			return r
 		}
 	}
-	return output
+	return strings.Map(unescaper, s)
 }
