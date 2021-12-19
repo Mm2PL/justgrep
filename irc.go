@@ -18,6 +18,39 @@ type Message struct {
 	Timestamp time.Time         `json:"timestamp"`
 }
 
+func (m Message) Serialize() (output string) {
+	if m.Tags != nil && len(m.Tags) != 0 {
+		output += "@"
+		i := 1
+		for k, v := range m.Tags {
+			if i == len(m.Tags) {
+				output += k + "=" + escapeValue(v)
+			} else {
+				output += k + "=" + escapeValue(v) + ";"
+			}
+			i += 1
+		}
+		output += " "
+	}
+	if m.Prefix != "" {
+		output += ":" + m.Prefix + " "
+	}
+	output += m.Action
+	if len(m.Args) != 0 {
+		output += " "
+		for i := 0; i < len(m.Args); i++ {
+			arg := m.Args[i]
+			if i == len(m.Args)-1 {
+				output += ":" + arg + "\r\n"
+				return
+			} else {
+				output += arg + " "
+			}
+		}
+	}
+	output += "\r\n"
+	return // this should only be hit if there are no args
+}
 func (m Message) String() string {
 	return fmt.Sprintf("Message{Prefix: %q, Action: %q, Args: %q, Timestamp: %s}", m.Prefix, m.Action, m.Args, m.Timestamp)
 }
@@ -126,4 +159,33 @@ func unescapeValue(s string) string {
 		}
 	}
 	return strings.Map(unescaper, s)
+}
+
+func escapeValue(s string) string {
+	out := make([]rune, 1024)
+	usedCount := 0
+	for _, chr := range s {
+		switch chr {
+		case ';':
+			out[usedCount] = '\\'
+			out[usedCount+1] = ':'
+			usedCount += 2
+		case '\r':
+			out[usedCount] = '\\'
+			out[usedCount+1] = 'r'
+			usedCount += 2
+		case '\n':
+			out[usedCount] = '\\'
+			out[usedCount+1] = 'n'
+			usedCount += 2
+		case ' ':
+			out[usedCount] = '\\'
+			out[usedCount+1] = 's'
+			usedCount += 2
+		default:
+			out[usedCount] = chr
+			usedCount += 1
+		}
+	}
+	return string(out[:usedCount])
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
 func assert(t *testing.T, what string, have interface{}, expect interface{}) {
@@ -94,6 +95,47 @@ func BenchmarkNewMessage(b *testing.B) {
 		if err != nil {
 			break
 		}
-		_, _ = NewMessage(string(line))
+		_, err = NewMessage(string(line))
+		if err != nil {
+			fmt.Printf("Failed at line: %s. Err=%s\n", line, err)
+		}
+	}
+}
+func getTestMessage() *Message {
+	return &Message{
+		Raw:    "@badge-info=subscriber/15;badges=subscriber/12,glhf-pledge/1;color=#DAA520;display-name=Mm2PL;emotes=;flags=;id=1d7e0b34-fe74-4895-92ae-dd912046e637;mod=0;room-id=11148817;subscriber=1;tmi-sent-ts=1632058935165;turbo=0;user-id=117691339;user-type= :mm2pl!mm2pl@mm2pl.tmi.twitch.tv PRIVMSG #pajlada :-tags many words asdasd",
+		Prefix: "mm2pl!mm2pl@mm2pl.tmi.twitch.tv",
+		User:   "mm2pl",
+		Args:   []string{"#pajlada", "-tags many words asdasd"},
+		Action: "PRIVMSG",
+		Tags: map[string]string{
+			"badge-info":   "subscriber/15",
+			"badges":       "subscriber/12,glhf-pledge/1",
+			"color":        "#DAA520",
+			"display-name": "Mm2PL",
+			"emotes":       "",
+			"flags":        "",
+			"id":           "1d7e0b34-fe74-4895-92ae-dd912046e637",
+			"mod":          "0",
+			"room-id":      "11148817",
+			"subscriber":   "1",
+			"tmi-sent-ts":  "1632058935165",
+			"turbo":        "0",
+			"user-id":      "117691339",
+			"user-type":    "",
+		},
+		Timestamp: time.Date(2021, 9, 19, 15, 42, 15, 165, time.UTC),
+	}
+}
+
+func TestMessage_Serialize(t *testing.T) {
+	m := getTestMessage()
+	_ = m.Serialize()
+}
+
+func BenchmarkMessage_Serialize(b *testing.B) {
+	m := getTestMessage()
+	for i := 0; i < 1000; i++ {
+		_ = m.Serialize()
 	}
 }
