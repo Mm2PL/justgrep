@@ -41,20 +41,42 @@ func TestNewMessage(t *testing.T) {
 	assert(t, "Prefix", m.Prefix, "mm2pl!mm2pl@mm2pl.tmi.twitch.tv")
 	assertStrSlc(t, "Args", m.Args, []string{"#pajlada", "-tags"})
 	assertStrMap(t, "Tags", m.Tags, map[string]string{
-		"badge-info": "subscriber/15",
-		"badges": "subscriber/12,glhf-pledge/1",
-		"color": "#DAA520",
+		"badge-info":   "subscriber/15",
+		"badges":       "subscriber/12,glhf-pledge/1",
+		"color":        "#DAA520",
 		"display-name": "Mm2PL",
-		"emotes": "",
-		"flags": "",
-		"id": "1d7e0b34-fe74-4895-92ae-dd912046e637",
-		"mod": "0",
-		"room-id": "11148817",
-		"subscriber": "1",
-		"tmi-sent-ts": "1632058935165",
-		"turbo": "0",
-		"user-id": "117691339",
-		"user-type": "",
+		"emotes":       "",
+		"flags":        "",
+		"id":           "1d7e0b34-fe74-4895-92ae-dd912046e637",
+		"mod":          "0",
+		"room-id":      "11148817",
+		"subscriber":   "1",
+		"tmi-sent-ts":  "1632058935165",
+		"turbo":        "0",
+		"user-id":      "117691339",
+		"user-type":    "",
+	})
+
+	m, err = NewMessage("@badge-info=subscriber/15;badges=subscriber/12,glhf-pledge/1;color=#DAA520;display-name=Mm2PL;emotes=;flags=;id=1d7e0b34-fe74-4895-92ae-dd912046e637;mod=0;room-id=11148817;subscriber=1;tmi-sent-ts=1632058935165;turbo=0;user-id=117691339;user-type= :mm2pl!mm2pl@mm2pl.tmi.twitch.tv PRIVMSG #pajlada :-tags many words asdasd")
+	assert(t, "error", err, nil)
+	assert(t, "Action", m.Action, "PRIVMSG")
+	assert(t, "Prefix", m.Prefix, "mm2pl!mm2pl@mm2pl.tmi.twitch.tv")
+	assertStrSlc(t, "Args", m.Args, []string{"#pajlada", "-tags many words asdasd"})
+	assertStrMap(t, "Tags", m.Tags, map[string]string{
+		"badge-info":   "subscriber/15",
+		"badges":       "subscriber/12,glhf-pledge/1",
+		"color":        "#DAA520",
+		"display-name": "Mm2PL",
+		"emotes":       "",
+		"flags":        "",
+		"id":           "1d7e0b34-fe74-4895-92ae-dd912046e637",
+		"mod":          "0",
+		"room-id":      "11148817",
+		"subscriber":   "1",
+		"tmi-sent-ts":  "1632058935165",
+		"turbo":        "0",
+		"user-id":      "117691339",
+		"user-type":    "",
 	})
 }
 
