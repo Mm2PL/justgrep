@@ -59,7 +59,6 @@ func TestNewMessage(t *testing.T) {
 }
 
 func BenchmarkNewMessage(b *testing.B) {
-	b.ReportAllocs()
 	file, err := os.Open("channel.txt")
 	if err != nil {
 		fmt.Println("You need to have a large logs of IRC messages named channel.txt for this benchmark to work.")
