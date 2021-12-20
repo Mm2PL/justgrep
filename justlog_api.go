@@ -15,7 +15,16 @@ type JustlogAPI interface {
 	GetApproximateOffset() time.Duration
 }
 
-func fetch(url string, output chan *Message, cancel *bool) error {
+type ProgressState struct {
+	TotalResults []int `json:"total_results"`
+
+	CountLines int `json:"count_lines"`
+	CountBytes int `json:"count_bytes"`
+
+	BeginTime time.Time `json:"begin_time"`
+}
+
+func fetch(url string, output chan *Message, cancel *bool, progress *ProgressState) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -32,11 +41,13 @@ func fetch(url string, output chan *Message, cancel *bool) error {
 
 		for scanner.Scan() {
 			msg, err := NewMessage(scanner.Text())
+			progress.CountLines += 1
 			if err != nil {
 				output <- nil
 				_, _ = fmt.Fprintf(os.Stderr, "Error while fetching from %s: %s\n", url, err)
 				break
 			}
+			progress.CountBytes += len(msg.Raw)
 			output <- msg
 			if *cancel {
 				break
@@ -47,9 +58,9 @@ func fetch(url string, output chan *Message, cancel *bool) error {
 	return nil
 }
 
-func FetchForDate(api JustlogAPI, date time.Time, output chan *Message, canceled *bool) (time.Time, error) {
+func FetchForDate(api JustlogAPI, date time.Time, output chan *Message, canceled *bool, progress *ProgressState) (time.Time, error) {
 	url := api.MakeURL(date)
-	err := fetch(url, output, canceled)
+	err := fetch(url, output, canceled, progress)
 	if err != nil {
 		return time.Time{}, err
 	} else {
@@ -101,8 +112,9 @@ type channelsResp struct {
 		Name   string `json:"name"`
 	} `json:"channels"`
 }
+
 func GetChannelsFromJustLog(url string) ([]string, error) {
-	req, err := http.NewRequest("GET", url + "/channels", nil)
+	req, err := http.NewRequest("GET", url+"/channels", nil)
 	if err != nil {
 		return nil, err
 	}

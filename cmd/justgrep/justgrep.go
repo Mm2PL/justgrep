@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"justgrep"
@@ -10,6 +11,32 @@ import (
 	"strings"
 	"time"
 )
+
+type progressUpdate struct {
+	Type       string  `json:"type"`
+	Found      int     `json:"found"`
+	Channel    string  `json:"channel"`
+	NextDate   string  `json:"next_date,omitempty"`
+	TotalSteps float64 `json:"total_steps,omitempty"`
+	LeftSteps  float64 `json:"left_steps,omitempty"`
+
+	CurrentChannelNum int `json:"current_channel_num,omitempty"`
+	CountChannels     int `json:"count_channels,omitempty"`
+
+	Progress justgrep.ProgressState `json:"progress"`
+}
+
+type errorReport struct {
+	Type     string                 `json:"type"`
+	Error    string                 `json:"error"`
+	Progress justgrep.ProgressState `json:"progress"`
+}
+
+type summaryReport struct {
+	Type     string                 `json:"type"`
+	Results  map[string]int         `json:"results"`
+	Progress justgrep.ProgressState `json:"progress"`
+}
 
 type arguments struct {
 	url *string
@@ -30,8 +57,9 @@ type arguments struct {
 	startTime time.Time
 	endTime   time.Time
 
-	verbose   *bool
-	recursive *bool
+	verbose      *bool
+	recursive    *bool
+	progressJson *bool
 }
 
 func parseTime(input string) (output time.Time, err error) {
@@ -86,6 +114,11 @@ func (args *arguments) validateAndProcessFlags() (valid bool) {
 	return
 }
 
+const progressNextChannel = "nextChannel"
+const progressNextStep = "nextStep"
+const errorWhileFetching = "fetchError"
+const summaryFinished = "summaryFinished"
+
 func main() {
 	args := &arguments{}
 	args.user = flag.String("user", "", "Target user")
@@ -102,6 +135,7 @@ func main() {
 	args.maxResults = flag.Int("max", 0, "How many results do you want? 0 for unlimited")
 
 	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
+	args.progressJson = flag.Bool("progress-json", false, "Send JSON progress updates to stderr")
 	args.recursive = flag.Bool("r", false, "Run search on all channels.")
 	flag.Parse()
 	flagsAreValid := args.validateAndProcessFlags()
@@ -157,7 +191,6 @@ func main() {
 
 		Count: *args.maxResults,
 	}
-	totalResults := make([]int, justgrep.ResultCount)
 	var channelsToSearch []string
 	if !*args.recursive {
 		channelsToSearch = strings.Split(*args.channel, ",")
@@ -171,9 +204,24 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	progress := &justgrep.ProgressState{
+		TotalResults: make([]int, justgrep.ResultCount),
+		BeginTime:    time.Now(),
+	}
 	for currentIndex, channel := range channelsToSearch {
 		if *args.verbose {
 			_, _ = fmt.Fprintf(os.Stderr, "Now scanning #%s %d/%d\n", channel, currentIndex+1, len(channelsToSearch))
+		}
+		if *args.progressJson {
+			_ = json.NewEncoder(os.Stderr).Encode(progressUpdate{
+				Type:              progressNextChannel,
+				Found:             progress.TotalResults[justgrep.ResultOk],
+				Channel:           channel,
+				CurrentChannelNum: currentIndex,
+				CountChannels:     len(channelsToSearch),
+				Progress:          *progress,
+			})
 		}
 		var api justgrep.JustlogAPI
 		if *args.user != "" && !(*args.userIsRegex) {
@@ -181,13 +229,24 @@ func main() {
 		} else {
 			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: *args.url}
 		}
-		searchLogs(args, err, api, download, filter, totalResults)
+		searchLogs(args, err, api, download, filter, progress)
 	}
 	if *args.verbose {
 		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
-		for result, count := range totalResults {
+		for result, count := range progress.TotalResults {
 			_, _ = fmt.Fprintf(os.Stderr, " - %s => %d\n", justgrep.FilterResult(result), count)
 		}
+	}
+	if *args.progressJson {
+		res := make(map[string]int)
+		for result, count := range progress.TotalResults {
+			res[justgrep.FilterResult(result).String()] = count
+		}
+		_ = json.NewEncoder(os.Stderr).Encode(summaryReport{
+			Type:     summaryFinished,
+			Results:  res,
+			Progress: *progress,
+		})
 	}
 }
 
@@ -206,7 +265,8 @@ func makeProgressBar(totalSteps float64, stepsLeft float64) string {
 	left := strings.Repeat(" ", int(math.Ceil(progressSize*(1-fracDone))))
 	return fmt.Sprintf("[%s>%s] %.2f%%", done, left, fracDone*100)
 }
-func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download chan *justgrep.Message, filter justgrep.Filter, totalResults []int) {
+
+func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download chan *justgrep.Message, filter justgrep.Filter, progress *justgrep.ProgressState) {
 	nextDate := args.endTime
 	cancelled := false
 	var channel string
@@ -225,11 +285,48 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 	for {
 		stepsLeft := float64(nextDate.Sub(args.startTime) / step)
 		if *args.verbose {
-			_, _ = fmt.Fprintf(os.Stderr, "Found %d matching messages... Downloading #%s at %s %s.\n", totalResults[justgrep.ResultOk], channel, nextDate.Format("2006-01-02"), makeProgressBar(totalSteps, stepsLeft))
+			nowTime := time.Now()
+			timeTaken := float64(nowTime.Sub(progress.BeginTime) / time.Second)
+			if timeTaken == 0 {
+				timeTaken = 1
+			}
+			_, _ = fmt.Fprintf(
+				os.Stderr,
+				"Found %d matching messages... Downloading #%s at %s %s. %d/s (%.2f MB/s before compression). "+
+					"Processed %.2f MB (%d lines and counting)\n",
+				progress.TotalResults[justgrep.ResultOk],
+				channel,
+				nextDate.Format("2006-01-02"),
+				makeProgressBar(totalSteps, stepsLeft),
+				progress.CountLines/int(timeTaken),
+				float64(progress.CountBytes/1000/1000)/timeTaken,
+
+				float64(progress.CountBytes/1000/1000),
+				progress.CountLines,
+			)
 		}
-		nextDate, err = justgrep.FetchForDate(api, nextDate, download, &cancelled)
+		if *args.progressJson {
+			_ = json.NewEncoder(os.Stderr).Encode(progressUpdate{
+				Type:       progressNextStep,
+				Found:      progress.TotalResults[justgrep.ResultOk],
+				Channel:    channel,
+				NextDate:   nextDate.Format(time.RFC3339),
+				TotalSteps: totalSteps,
+				LeftSteps:  stepsLeft,
+				Progress:   *progress,
+			})
+		}
+		nextDate, err = justgrep.FetchForDate(api, nextDate, download, &cancelled, progress)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Error while fetching logs: %s\n", err)
+			if *args.progressJson {
+				_ = json.NewEncoder(os.Stderr).Encode(errorReport{
+					Type:     errorWhileFetching,
+					Error:    err.Error(),
+					Progress: *progress,
+				})
+			} else {
+				_, _ = fmt.Fprintf(os.Stderr, "Error while fetching logs: %s\n", err)
+			}
 			break
 		}
 
@@ -248,7 +345,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 		}
 
 		for result, count := range results {
-			totalResults[result] += count
+			progress.TotalResults[result] += count
 		}
 		if nextDate.Before(args.startTime) || results[justgrep.ResultMaxCountReached] != 0 {
 			break
