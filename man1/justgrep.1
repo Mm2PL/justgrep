@@ -1,0 +1,83 @@
+.TH JUSTGREP 1 2021-12-23 1.0.0 "no clue what to put here xd"
+.SH NAME
+justgrep \- Tool for scanning justlog logs
+.SH SYNOPSIS
+\fBjustgrep\fP \fI[options]\fP \fB-channel\fP \fIchannel name\fP \fB-url\fP
+\fIhttps://example.com\fP \fB-regex\fP \fIregular expression\fP \fB-start\fP
+\fI2021-01-01T00:00:00Z\fP \fB-end\fP \fI2021-02-01T00:00:00Z\fP
+
+.br
+\fBjustgrep\fP \fI[options]\fP \fB-r\fP \fB-url\fP \fIhttps://example.com\fP
+\fB-regex\fP \fIregular expression\fP  \fB-start\fP \fI2021-01-01T00:00:00Z\fP
+\fB-end\fP \fI2021-02-01T00:00:00Z\fP
+
+.SH DESCRIPTION
+This tool searches the desired \fIjustlog instance\fP for a regular expression or username regular expression in a
+set time range.
+
+.SH OPTIONS
+.TP
+.BR \-channel\  channel\ name
+Pick desired channel to search.
+
+.TP
+.BR \-r
+Run search on all channels available on the desired \fIjustlog instance\fP. Overrides \fI-channel\fP.
+
+.TP
+.BR \-max\  count
+Choose how many messages should be returned by \fBjustgrep\fP.
+
+.TP
+.BR \-start ", " \-end\  TIME
+Allow you to specify the time range to search. \fI-end\fP should be the later part of the range. Accepted formats are:
+
+.TS
+tab(@);
+l lx.
+1@T{
+    2006-01-02 15:04:05
+T}
+2@T{
+    2006-01-02 15:04:05-07:00
+T}
+3@T{
+    2006-01-02T15:04:05Z07:00 (RFC3339)
+T}
+.TE
+
+.TP
+.BR \-user\  name
+Search logs for a single user. If \fI-uregex\fP is used in combination,
+\fBname\fP is treated as a regular expression. It's worth noting that search a
+single user's logs is much faster than a whole channel.
+
+.TP
+.BR \-notuser\  name
+Ignores user identified by \fIname\fP from log searches. If \fI-uregex\fP is
+used in combination, \fBname\fP is treated as a regular expression.
+
+.TP
+.BR \-uregex
+Switches \fI-user\fP and \fI-notuser\fP to be treated as a regular expression
+instead of literally.
+
+.TP
+.BR \-regex\  regular\ expression
+Searches messages for the pattern. This option is required.
+
+.TP
+.BR \-url\  justlog\ instance\ url
+Selects your desired justlog instance. By default it's \fIhttp://localhost:8025\fP, the default listen address for justlog.
+
+.TP
+.BR \-v
+Shows you progress info on stderr.
+
+.TP
+.BR \-progress-json
+Returns the same information as \fI-v\fP but in JSON format for machine processing. Also uses stderr.
+
+.TP
+.BR \-msg-only
+Makes \fBjustgrep\fP return only user chat messages, \fIPRIVMSG\fPs.
