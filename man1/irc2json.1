@@ -1,0 +1,58 @@
+.TH IRC2JSON 1 2021-12-23 1.0.0 "no clue what to put here xd"
+.SH NAME
+irc2json \- converts from data IRC to JSON
+.SH SYNOPSIS
+cat ./file_with_irc_messages | \fBirc2json\fP
+
+.SH DESCRIPTION
+Usage of this tool is dead simple. It reads IRC from stdin and writes JSON on
+stdout. This tool outputs JSON in the following format:
+
+.EX
+{
+  "raw": "@key=value;key2=value;time=2021-12-23T21:53:20.471Z :Mm2PL!~mm2pl@kotmisia.pl PRIVMSG #botwars :This is a test message",
+  "prefix": "Mm2PL!~mm2pl@kotmisia.pl",
+  "user": "mm2pl",
+  "args": [
+    "#botwars",
+    "This is a test message"
+  ],
+  "action": "PRIVMSG",
+  "tags": {
+    "key": "value",
+    "key2": "value"
+  },
+  "timestamp": "2021-12-23T22:53:20.471+01:00"
+}
+.EE
+
+It is worth noting that the timestamp field will automatically be set if either
+\fItmi-sent-ts\fP or \fItime\fP tag is set. Otherwise it will be an empty
+string.
+
+.SH EXIT CODES
+This tool fails with exit code 1 if it is unable to parse given message or failed to serialize it.
+
+.SH EXAMPLES
+
+Parse the message from the description:
+.PP
+.in +4n
+.EX
+echo '@key=value;key2=value;time=2021-12-23T21:53:20.471Z :Mm2PL!~mm2pl@kotmisia.pl PRIVMSG #botwars :This is a test message' | irc2json
+.EE
+.in
+
+Fetch and parse logs from justlog with
+.BR justgrep (1)
+from \fIjustlog instance\fP:
+.PP
+.in +4n
+.EX
+justgrep -channel pajlada -regex "pajaS" -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url \fIjustlog instance\fP | irc2json
+.EE
+.in
+
+.SH SEE\ ALSO
+.BR jq (1)
+.BR justgrep (1)
