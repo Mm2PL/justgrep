@@ -81,3 +81,15 @@ Returns the same information as \fI-v\fP but in JSON format for machine processi
 .TP
 .BR \-msg-only
 Makes \fBjustgrep\fP return only user chat messages, \fIPRIVMSG\fPs.
+
+.SH EXAMPLES
+Fetch all messages matching \fIpajaS\fP from \fI2021-12-01\fP to \fI2021-12-07\fP (inclusive) from channel \fIpajlada\fP from \fIjustlog instance\fP:
+.PP
+.in +4n
+.EX
+justgrep -channel pajlada -regex "pajaS" -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url \fIjustlog instance\fP | irc2json
+.EE
+.in
+
+.SH "SEE ALSO"
+.BR irc2json (1)
