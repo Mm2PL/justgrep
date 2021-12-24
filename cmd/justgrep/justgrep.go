@@ -89,10 +89,6 @@ func (args *arguments) validateAndProcessFlags() (valid bool) {
 		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -start argument.")
 		valid = false
 	}
-	if *args.end == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -end argument.")
-		valid = false
-	}
 	// show missing arguments and that's it
 	if !valid {
 		return
@@ -104,13 +100,16 @@ func (args *arguments) validateAndProcessFlags() (valid bool) {
 		valid = false
 	}
 	args.startTime = startTime
-
-	endTime, err := parseTime(*args.end)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "-end: Invalid time: %s: %s\n", *args.end, err)
-		valid = false
+	if *args.end == "" {
+		args.endTime = time.Now().UTC()
+	} else {
+		endTime, err := parseTime(*args.end)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "-end: Invalid time: %s: %s\n", *args.end, err)
+			valid = false
+		}
+		args.endTime = endTime
 	}
-	args.endTime = endTime
 	return
 }
 

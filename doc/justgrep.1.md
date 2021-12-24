@@ -50,7 +50,8 @@ This tool searches the desired <i>justlog instance</i> for a regular expression
 <dl class="Bl-tag">
   <dt><b>-start</b>, <b>-end&#x00A0;</b>TIME</dt>
   <dd>Allow you to specify the time range to search. <i>-end</i> should be the
-      later part of the range. Accepted formats are:
+      later part of the range. <i>-end</i> defaults to the current date/time if
+      not given. <i>-start</i> is required. Accepted formats are:
     <div class="Pp"></div>
     <table class="tbl">
       <tr>
