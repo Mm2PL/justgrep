@@ -14,14 +14,14 @@ justgrep - Tool for scanning justlog logs
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <b>justgrep</b> <i>[options]</i> <b>-channel</b> <i>channel name</i> <b>-url</b>
   <i>https://example.com</i> <b>-regex</b> <i>regular expression</i>
-  <b>-start</b> <i>2021-01-01T00:00:00Z</i> <b>-end</b>
-  <i>2021-02-01T00:00:00Z</i>
+  <b>-start</b> <i>2021-01-01T00:00:00Z</i> [<b>-end</b>
+  <i>2021-02-01T00:00:00Z</i>]
 <div class="Pp"></div>
 <div>&#x00A0;</div>
 <b>justgrep</b> <i>[options]</i> <b>-r</b> <b>-url</b>
   <i>https://example.com</i> <b>-regex</b> <i>regular expression</i>
-  <b>-start</b> <i>2021-01-01T00:00:00Z</i> <b>-end</b>
-  <i>2021-02-01T00:00:00Z</i>
+  <b>-start</b> <i>2021-01-01T00:00:00Z</i> [ <b>-end</b>
+  <i>2021-02-01T00:00:00Z</i>]
 <div class="Pp"></div>
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 This tool searches the desired <i>justlog instance</i> for a regular expression
@@ -133,6 +133,15 @@ Fetch all messages matching <i>pajaS</i> from <i>2021-12-01</i> to
 <br/>
 <pre>
 justgrep -channel pajlada -regex &quot;pajaS&quot; -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url [justlog instance]
+</pre>
+<br/>
+<div class="Pp"></div>
+Fetch all messages matching <i>pajaS</i> from <i>2021-12-01</i> until now from
+  channel <i>pajlada</i> from <i>justlog instance</i>:
+<div class="Pp"></div>
+<br/>
+<pre>
+justgrep -channel pajlada -regex &quot;pajaS&quot; -start 2021-12-01T00:00:00Z -url [justlog instance]
 </pre>
 <br/>
 <div class="Pp"></div>
