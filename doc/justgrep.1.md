@@ -132,7 +132,7 @@ Fetch all messages matching <i>pajaS</i> from <i>2021-12-01</i> to
 <div class="Pp"></div>
 <br/>
 <pre>
-justgrep -channel pajlada -regex &quot;pajaS&quot; -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url  justlog instance
+justgrep -channel pajlada -regex &quot;pajaS&quot; -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url [justlog instance]
 </pre>
 <br/>
 <div class="Pp"></div>
