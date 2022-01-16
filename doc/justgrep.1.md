@@ -121,7 +121,14 @@ This tool searches the desired <i>justlog instance</i> for a regular expression
 </dl>
 <dl class="Bl-tag">
   <dt><b>-msg-only</b></dt>
+  <dd>Deprecated: use <b>-msg-types PRIVMSG</b> instead.</dd>
   <dd>Makes <b>justgrep</b> return only user chat messages, <i>PRIVMSG</i>s.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-msg-types</b></dt>
+  <dd>Makes justgrep return only certain messages based on the IRC command/action. Putting the most command types first might speed up your search slightly.
     <div class="Pp"></div>
   </dd>
 </dl>
@@ -142,6 +149,14 @@ Fetch all messages matching <i>pajaS</i> from <i>2021-12-01</i> until now from
 <br/>
 <pre>
 justgrep -channel pajlada -regex &quot;pajaS&quot; -start 2021-12-01T00:00:00Z -url [justlog instance]
+</pre>
+<br/>
+Fetch all timeouts matching from <i>2021-12-01</i> to <i>2021-12-07</i>
+  (inclusive) from channel <i>pajlada</i> from <i>justlog instance</i>:
+<div class="Pp"></div>
+<br/>
+<pre>
+justgrep -channel pajlada -msg-types CLEARCHAT -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url [justlog instance]
 </pre>
 <br/>
 <div class="Pp"></div>

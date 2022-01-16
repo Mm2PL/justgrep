@@ -82,7 +82,12 @@ Returns the same information as \fI-v\fP but in JSON format for machine processi
 
 .TP
 .BR \-msg-only
+Deprecated: use \fB-msg-types PRIVMSG\fP instead.
 Makes \fBjustgrep\fP return only user chat messages, \fIPRIVMSG\fPs.
+
+.TP
+.BR \-msg-types\  comma\ separated\ list\ of\ types
+Makes justgrep return only certain messages based on the IRC command/action. Putting the most common types first might speed up your search slightly.
 
 .SH EXAMPLES
 Fetch all messages matching \fIpajaS\fP from \fI2021-12-01\fP to \fI2021-12-07\fP (inclusive) from channel \fIpajlada\fP from \fIjustlog instance\fP:
@@ -98,6 +103,14 @@ Fetch all messages matching \fIpajaS\fP from \fI2021-12-01\fP until now from cha
 .in +4n
 .EX
 justgrep -channel pajlada -regex "pajaS" -start 2021-12-01T00:00:00Z -url [justlog instance]
+.EE
+.in
+
+Fetch all timeouts matching from \fI2021-12-01\fP to \fI2021-12-07\fP (inclusive) from channel \fIpajlada\fP from \fIjustlog instance\fP:
+.PP
+.in +4n
+.EX
+justgrep -channel pajlada -msg-types CLEARCHAT -start 2021-12-01T00:00:00Z -end 2021-12-07T23:59:59Z -url [justlog instance]
 .EE
 .in
 
