@@ -20,7 +20,7 @@ type Filter struct {
 	EndDate   time.Time
 
 	HasMessageType bool
-	MessageType    string
+	MessageTypes   []string
 
 	HasMessageRegex bool
 	MessageRegex    *regexp.Regexp
@@ -95,9 +95,17 @@ func (f Filter) Filter(msg *Message) FilterResult {
 	if msg.Timestamp.Before(f.StartDate) {
 		return ResultDate
 	}
-
-	if f.HasMessageType && f.MessageType != msg.Action {
-		return ResultType
+	if f.HasMessageType {
+		ok := false
+		for _, messageType := range f.MessageTypes {
+			if messageType == msg.Action {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return ResultType
+		}
 	}
 	if f.HasMessageRegex && !f.MessageRegex.MatchString(msg.Args[len(msg.Args)-1]) {
 		return ResultContent

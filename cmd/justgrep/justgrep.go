@@ -60,6 +60,9 @@ type arguments struct {
 	verbose      *bool
 	recursive    *bool
 	progressJson *bool
+
+	messageTypes    []string
+	messageTypesRaw *string
 }
 
 func parseTime(input string) (output time.Time, err error) {
@@ -124,7 +127,8 @@ func main() {
 	args.notUser = flag.String("notuser", "", "Negative match on username")
 	args.userIsRegex = flag.Bool("uregex", false, "Is the -user option a regex?")
 
-	args.msgOnly = flag.Bool("msg-only", false, "Only want chat messages (PRIVMSGs).")
+	args.msgOnly = flag.Bool("msg-only", false, "Only want chat messages (PRIVMSGs). Deprecated: use -msg-types PRIVMSG")
+	args.messageTypesRaw = flag.String("msg-types", "", "Return only messages with COMMANDs in the comma separated list.")
 
 	args.channel = flag.String("channel", "", "Target channel")
 	args.messageRegex = flag.String("regex", "", "Message Regex")
@@ -170,12 +174,13 @@ func main() {
 			return
 		}
 	}
+	args.messageTypes = strings.Split(*args.messageTypesRaw, ",")
 	filter := justgrep.Filter{
 		StartDate: args.startTime,
 		EndDate:   args.endTime,
 
-		HasMessageType: *args.msgOnly,
-		MessageType:    "PRIVMSG",
+		HasMessageType: len(*args.messageTypesRaw) != 0,
+		MessageTypes:   args.messageTypes,
 
 		HasMessageRegex: true,
 		MessageRegex:    messageExpr,
