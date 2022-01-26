@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"justgrep"
+	"github.com/Mm2PL/justgrep"
 	"os"
 )
 

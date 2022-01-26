@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"justgrep"
+	"github.com/Mm2PL/justgrep"
 	"math"
 	"os"
 	"regexp"
