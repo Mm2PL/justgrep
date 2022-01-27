@@ -88,6 +88,10 @@ func (args *arguments) validateAndProcessFlags() (valid bool) {
 		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -channel or -r (recursive) arguments.")
 		valid = false
 	}
+	if *args.channel != "" && *args.recursive {
+		_, _ = fmt.Fprintln(os.Stderr, "Passing both -r (run on all channels) and -channel does not make sense.")
+		valid = false
+	}
 	if *args.start == "" {
 		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -start argument.")
 		valid = false
