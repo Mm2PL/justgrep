@@ -121,6 +121,8 @@ const progressNextStep = "nextStep"
 const errorWhileFetching = "fetchError"
 const summaryFinished = "summaryFinished"
 
+var gitCommit = "[unavailable]"
+
 func main() {
 	args := &arguments{}
 	args.user = flag.String("user", "", "Target user")
@@ -140,6 +142,12 @@ func main() {
 	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
 	args.progressJson = flag.Bool("progress-json", false, "Send JSON progress updates to stderr")
 	args.recursive = flag.Bool("r", false, "Run search on all channels.")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "This is justgrep commit %s, https://github.com/Mm2PL/justgrep\n", gitCommit)
+		fmt.Fprintf(flag.CommandLine.Output(), "Basic usage:\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(flag.CommandLine.Output(), "Check man page for examples and longer explanations\n")
+	}
 	flag.Parse()
 	flagsAreValid := args.validateAndProcessFlags()
 	if !flagsAreValid {

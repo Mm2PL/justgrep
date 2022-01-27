@@ -9,7 +9,7 @@ install: all
 	install -Dm 644 man1/irc2json.1 "${DESTDIR}/usr/share/man/man1/irc2json.1"
 
 justgrep: cmd/justgrep/justgrep.go
-	go build cmd/justgrep/justgrep.go
+	go build -ldflags "-X main.gitCommit=$$(git rev-parse HEAD)" cmd/justgrep/justgrep.go
 
 irc2json: cmd/irc2json/irc2json.go
 	go build cmd/irc2json/irc2json.go
