@@ -3,6 +3,7 @@ package justgrep
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -34,6 +35,14 @@ func fetch(url string, output chan *Message, cancel *bool, progress *ProgressSta
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode != 200 {
+		scanner := bufio.NewScanner(resp.Body)
+		if scanner.Scan() {
+			return errors.New(fmt.Sprintf("justlog instance responded with %d: %q", resp.StatusCode, scanner.Text()))
+		}
+		return errors.New(fmt.Sprintf("justlog instance responded with unexpected %d status code", resp.StatusCode))
+	}
+
 	go func() {
 		defer resp.Body.Close()
 
