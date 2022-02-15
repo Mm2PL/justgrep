@@ -151,6 +151,7 @@ func unescapeValue(s string) string {
 	nextEscaped := false
 	unescaper := func(r rune) rune {
 		if nextEscaped {
+			nextEscaped = false
 			switch r {
 			case ':':
 				return ';'
@@ -158,6 +159,8 @@ func unescapeValue(s string) string {
 				return '\r'
 			case 'n':
 				return '\n'
+			case 's':
+				return ' '
 			default:
 				return r
 			}
