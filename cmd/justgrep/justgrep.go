@@ -199,8 +199,8 @@ func main() {
 
 		UserMatchType: matchMode,
 
-		UserName:         *args.user,
-		NegativeUserName: *args.notUser,
+		UserName:         strings.ToLower(*args.user),
+		NegativeUserName: strings.ToLower(*args.notUser),
 
 		NegativeUserRegex: negativeRegex,
 		UserRegex:         userRegex,
