@@ -63,22 +63,35 @@ func TestNewMessage(t *testing.T) {
 	assert(t, "Action", m.Action, "PRIVMSG")
 	assert(t, "Prefix", m.Prefix, "mm2pl!mm2pl@mm2pl.tmi.twitch.tv")
 	assertStrSlc(t, "Args", m.Args, []string{"#pajlada", "-tags many words asdasd"})
-	assertStrMap(t, "Tags", m.Tags, map[string]string{
-		"badge-info":   "subscriber/15",
-		"badges":       "subscriber/12,glhf-pledge/1",
-		"color":        "#DAA520",
-		"display-name": "Mm2PL",
-		"emotes":       "",
-		"flags":        "",
-		"id":           "1d7e0b34-fe74-4895-92ae-dd912046e637",
-		"mod":          "0",
-		"room-id":      "11148817",
-		"subscriber":   "1",
-		"tmi-sent-ts":  "1632058935165",
-		"turbo":        "0",
-		"user-id":      "117691339",
-		"user-type":    "",
-	})
+	assertStrMap(
+		t, "Tags", m.Tags, map[string]string{
+			"badge-info":   "subscriber/15",
+			"badges":       "subscriber/12,glhf-pledge/1",
+			"color":        "#DAA520",
+			"display-name": "Mm2PL",
+			"emotes":       "",
+			"flags":        "",
+			"id":           "1d7e0b34-fe74-4895-92ae-dd912046e637",
+			"mod":          "0",
+			"room-id":      "11148817",
+			"subscriber":   "1",
+			"tmi-sent-ts":  "1632058935165",
+			"turbo":        "0",
+			"user-id":      "117691339",
+			"user-type":    "",
+		},
+	)
+
+	m, err = NewMessage(`@tag=spaces\sexist\sas\sdo\nnew\rlines\sand\:semicolons TEST`)
+	assert(t, "error", err, nil)
+	assert(t, "Action", m.Action, "TEST")
+	assert(t, "Prefix", m.Prefix, "")
+	assertStrSlc(t, "Args", m.Args, []string{})
+	assertStrMap(
+		t, "Tags", m.Tags, map[string]string{
+			"tag": "spaces exist as do\nnew\rlines and;semicolons",
+		},
+	)
 }
 
 func BenchmarkNewMessage(b *testing.B) {
@@ -128,9 +141,19 @@ func getTestMessage() *Message {
 	}
 }
 
+func testSerializeMessage(t *testing.T, rawIrc string) {
+	m, err := NewMessage(rawIrc)
+	assert(t, "error", err, nil)
+	assert(t, "serialized output", m.Serialize(), rawIrc+"\r\n")
+}
 func TestMessage_Serialize(t *testing.T) {
-	m := getTestMessage()
-	_ = m.Serialize()
+	testSerializeMessage(
+		t,
+		"@badge-info=subscriber/15;badges=subscriber/12,glhf-pledge/1;color=#DAA520;display-name=Mm2PL;emotes=;flags=;id=1d7e0b34-fe74-4895-92ae-dd912046e637;mod=0;room-id=11148817;subscriber=1;tmi-sent-ts=1632058935165;turbo=0;user-id=117691339;user-type= :mm2pl!mm2pl@mm2pl.tmi.twitch.tv PRIVMSG #pajlada :-tags many words asdasd",
+	)
+
+	// test escaping tags
+	testSerializeMessage(t, `@tag=spaces\sexist\sas\sdo\nnew\rlines\sand\:semicolons TEST`)
 }
 
 func BenchmarkMessage_Serialize(b *testing.B) {
