@@ -3,6 +3,7 @@ package justgrep
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -21,14 +22,23 @@ type Message struct {
 func (m Message) Serialize() (output string) {
 	if m.Tags != nil && len(m.Tags) != 0 {
 		output += "@"
-		i := 1
-		for k, v := range m.Tags {
-			if i == len(m.Tags) {
+		// this is all to sort tags alphabetically to produce constant output
+		keys := make([]string, len(m.Tags))
+		i := 0
+		for k := range m.Tags {
+			keys[i] = k
+			i += 1
+		}
+		sort.Strings(keys)
+
+		maxIdx := len(keys) - 1
+		for i, k := range keys {
+			v := m.Tags[k]
+			if i == maxIdx {
 				output += k + "=" + escapeValue(v)
 			} else {
 				output += k + "=" + escapeValue(v) + ";"
 			}
-			i += 1
 		}
 		output += " "
 	}
