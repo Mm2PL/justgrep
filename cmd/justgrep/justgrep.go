@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/Mm2PL/justgrep"
 	"math"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/Mm2PL/justgrep"
 )
 
 type progressUpdate struct {
@@ -284,7 +286,7 @@ func makeProgressBar(totalSteps float64, stepsLeft float64) string {
 
 func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download chan *justgrep.Message, filter justgrep.Filter, progress *justgrep.ProgressState) {
 	nextDate := args.endTime
-	cancelled := false
+	ctx, cancel := context.WithCancel(context.Background())
 	var channel string
 	step := api.GetApproximateOffset()
 	switch api.(type) {
@@ -298,6 +300,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 	}
 	totalSteps := float64(args.endTime.Sub(args.startTime) / step)
 
+	defer cancel()
 	for {
 		stepsLeft := float64(nextDate.Sub(args.startTime) / step)
 		if *args.verbose {
@@ -332,7 +335,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 				Progress:   *progress,
 			})
 		}
-		nextDate, err = justgrep.FetchForDate(api, nextDate, download, &cancelled, progress)
+		nextDate, err = justgrep.FetchForDateWithContext(ctx, api, nextDate, download, progress)
 		if err != nil {
 			if *args.progressJson {
 				_ = json.NewEncoder(os.Stderr).Encode(errorReport{
@@ -349,7 +352,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 		filtered := make(chan *justgrep.Message)
 		var results []int
 		go func() {
-			results = filter.StreamFilter(download, filtered, &cancelled)
+			results = filter.StreamFilterWithContext(cancel, download, filtered)
 			filtered <- nil
 		}()
 		for {

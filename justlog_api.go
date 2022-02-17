@@ -2,6 +2,7 @@ package justgrep
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,8 +26,8 @@ type ProgressState struct {
 	BeginTime time.Time `json:"begin_time"`
 }
 
-func fetch(url string, output chan *Message, cancel *bool, progress *ProgressState) error {
-	req, err := http.NewRequest("GET", url, nil)
+func fetch(ctx context.Context, url string, output chan *Message, progress *ProgressState) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -36,6 +37,7 @@ func fetch(url string, output chan *Message, cancel *bool, progress *ProgressSta
 		return err
 	}
 	if resp.StatusCode != 200 {
+		defer resp.Body.Close()
 		scanner := bufio.NewScanner(resp.Body)
 		if scanner.Scan() {
 			return errors.New(fmt.Sprintf("justlog instance responded with %d: %q", resp.StatusCode, scanner.Text()))
@@ -58,7 +60,7 @@ func fetch(url string, output chan *Message, cancel *bool, progress *ProgressSta
 			}
 			progress.CountBytes += len(msg.Raw)
 			output <- msg
-			if *cancel {
+			if ctx.Err() != nil {
 				break
 			}
 		}
@@ -67,9 +69,38 @@ func fetch(url string, output chan *Message, cancel *bool, progress *ProgressSta
 	return nil
 }
 
-func FetchForDate(api JustlogAPI, date time.Time, output chan *Message, canceled *bool, progress *ProgressState) (time.Time, error) {
+// deprecated
+func FetchForDate(
+	api JustlogAPI,
+	date time.Time,
+	output chan *Message,
+	canceled *bool,
+	progress *ProgressState,
+) (time.Time, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		t := time.NewTicker(10 * time.Millisecond)
+		select {
+		case <-t.C:
+			if *canceled {
+				cancel()
+				break
+			}
+		}
+	}()
+	defer cancel()
+	return FetchForDateWithContext(ctx, api, date, output, progress)
+}
+
+func FetchForDateWithContext(
+	ctx context.Context,
+	api JustlogAPI,
+	date time.Time,
+	output chan *Message,
+	progress *ProgressState,
+) (time.Time, error) {
 	url := api.MakeURL(date)
-	err := fetch(url, output, canceled, progress)
+	err := fetch(ctx, url, output, progress)
 	if err != nil {
 		return time.Time{}, err
 	} else {
@@ -123,7 +154,11 @@ type channelsResp struct {
 }
 
 func GetChannelsFromJustLog(url string) ([]string, error) {
-	req, err := http.NewRequest("GET", url+"/channels", nil)
+	return GetChannelsFromJustLogWithContext(context.Background(), url)
+}
+
+func GetChannelsFromJustLogWithContext(ctx context.Context, url string) ([]string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url+"/channels", nil)
 	if err != nil {
 		return nil, err
 	}
