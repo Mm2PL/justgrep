@@ -83,6 +83,10 @@ func (f Filter) StreamFilter(input chan *Message, output chan *Message, cancelle
 		if result == ResultOk {
 			output <- msg
 		}
+		if result == ResultDate {
+			*cancelled = true
+			break
+		}
 	}
 	return results
 }
