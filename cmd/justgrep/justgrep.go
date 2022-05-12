@@ -377,7 +377,7 @@ func searchLogs(
 		filtered := make(chan *justgrep.Message)
 		var results []int
 		go func() {
-			results = filter.StreamFilter(cancel, download, filtered)
+			results = filter.StreamFilter(cancel, download, filtered, progress)
 		}()
 		for msg := range filtered {
 			fmt.Println(msg.Raw)

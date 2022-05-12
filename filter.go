@@ -74,6 +74,7 @@ func (f Filter) StreamFilter(
 	cancel context.CancelFunc,
 	input chan *Message,
 	output chan *Message,
+	progress *ProgressState,
 ) []int {
 	results := make([]int, ResultCount)
 	for msg := range input {
@@ -81,7 +82,7 @@ func (f Filter) StreamFilter(
 			break
 		}
 
-		if f.Count != 0 && results[ResultOk] >= f.Count {
+		if f.Count != 0 && progress.TotalResults[ResultOk]+results[ResultOk] >= f.Count {
 			results[ResultMaxCountReached] = 1
 			cancel() // HTTP request is still going, kill it
 			break
