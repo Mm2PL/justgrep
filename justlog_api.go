@@ -103,9 +103,23 @@ func (api UserJustlogAPI) NextLogFile(currentDate time.Time) time.Time {
 
 func (api UserJustlogAPI) MakeURL(date time.Time) string {
 	if api.IsId {
-		return fmt.Sprintf("%s/channel/%s/userid/%s/%d/%d?raw&reverse", api.URL, api.Channel, api.User, date.Year(), date.Month())
+		return fmt.Sprintf(
+			"%s/channel/%s/userid/%s/%d/%d?raw&reverse",
+			api.URL,
+			api.Channel,
+			api.User,
+			date.Year(),
+			date.Month(),
+		)
 	}
-	return fmt.Sprintf("%s/channel/%s/user/%s/%d/%d?raw&reverse", api.URL, api.Channel, api.User, date.Year(), date.Month())
+	return fmt.Sprintf(
+		"%s/channel/%s/user/%s/%d/%d?raw&reverse",
+		api.URL,
+		api.Channel,
+		api.User,
+		date.Year(),
+		date.Month(),
+	)
 }
 
 func (api UserJustlogAPI) GetApproximateOffset() time.Duration {
@@ -123,7 +137,14 @@ func (api ChannelJustlogAPI) NextLogFile(currentDate time.Time) time.Time {
 }
 
 func (api ChannelJustlogAPI) MakeURL(date time.Time) string {
-	return fmt.Sprintf("%s/channel/%s/%d/%d/%d?raw&reverse", api.URL, api.Channel, date.Year(), date.Month(), date.Day())
+	return fmt.Sprintf(
+		"%s/channel/%s/%d/%d/%d?raw&reverse",
+		api.URL,
+		api.Channel,
+		date.Year(),
+		date.Month(),
+		date.Day(),
+	)
 }
 
 type channelsResp struct {

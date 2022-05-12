@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/Mm2PL/justgrep"
 	"os"
+
+	"github.com/Mm2PL/justgrep"
 )
 
 func main() {

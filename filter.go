@@ -28,10 +28,10 @@ type Filter struct {
 
 	UserMatchType UserMatchType
 
-	UserRegex        *regexp.Regexp
+	UserRegex         *regexp.Regexp
 	NegativeUserRegex *regexp.Regexp
-	UserName         string
-	NegativeUserName string
+	UserName          string
+	NegativeUserName  string
 
 	Count int
 }

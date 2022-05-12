@@ -135,8 +135,16 @@ func main() {
 	args.notUser = flag.String("notuser", "", "Negative match on username")
 	args.userIsRegex = flag.Bool("uregex", false, "Is the -user option a regex?")
 
-	args.msgOnly = flag.Bool("msg-only", false, "Only want chat messages (PRIVMSGs). Deprecated: use -msg-types PRIVMSG")
-	args.messageTypesRaw = flag.String("msg-types", "", "Return only messages with COMMANDs in the comma separated list.")
+	args.msgOnly = flag.Bool(
+		"msg-only",
+		false,
+		"Only want chat messages (PRIVMSGs). Deprecated: use -msg-types PRIVMSG",
+	)
+	args.messageTypesRaw = flag.String(
+		"msg-types",
+		"",
+		"Return only messages with COMMANDs in the comma separated list.",
+	)
 
 	args.channel = flag.String("channel", "", "Target channel")
 	args.messageRegex = flag.String("regex", "", "Message Regex")
@@ -149,7 +157,11 @@ func main() {
 	args.progressJson = flag.Bool("progress-json", false, "Send JSON progress updates to stderr")
 	args.recursive = flag.Bool("r", false, "Run search on all channels.")
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "This is justgrep commit %s, https://github.com/Mm2PL/justgrep\n", gitCommit)
+		fmt.Fprintf(
+			flag.CommandLine.Output(),
+			"This is justgrep commit %s, https://github.com/Mm2PL/justgrep\n",
+			gitCommit,
+		)
 		fmt.Fprintf(flag.CommandLine.Output(), "Basic usage:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(flag.CommandLine.Output(), "Check man page for examples and longer explanations\n")
@@ -230,14 +242,16 @@ func main() {
 			_, _ = fmt.Fprintf(os.Stderr, "Now scanning #%s %d/%d\n", channel, currentIndex+1, len(channelsToSearch))
 		}
 		if *args.progressJson {
-			_ = json.NewEncoder(os.Stderr).Encode(progressUpdate{
-				Type:              progressNextChannel,
-				Found:             progress.TotalResults[justgrep.ResultOk],
-				Channel:           channel,
-				CurrentChannelNum: currentIndex,
-				CountChannels:     len(channelsToSearch),
-				Progress:          *progress,
-			})
+			_ = json.NewEncoder(os.Stderr).Encode(
+				progressUpdate{
+					Type:              progressNextChannel,
+					Found:             progress.TotalResults[justgrep.ResultOk],
+					Channel:           channel,
+					CurrentChannelNum: currentIndex,
+					CountChannels:     len(channelsToSearch),
+					Progress:          *progress,
+				},
+			)
 		}
 		var api justgrep.JustlogAPI
 		if *args.user != "" && !(*args.userIsRegex) {
@@ -258,11 +272,13 @@ func main() {
 		for result, count := range progress.TotalResults {
 			res[justgrep.FilterResult(result).String()] = count
 		}
-		_ = json.NewEncoder(os.Stderr).Encode(summaryReport{
-			Type:     summaryFinished,
-			Results:  res,
-			Progress: *progress,
-		})
+		_ = json.NewEncoder(os.Stderr).Encode(
+			summaryReport{
+				Type:     summaryFinished,
+				Results:  res,
+				Progress: *progress,
+			},
+		)
 	}
 }
 
@@ -282,7 +298,13 @@ func makeProgressBar(totalSteps float64, stepsLeft float64) string {
 	return fmt.Sprintf("[%s>%s] %.2f%%", done, left, fracDone*100)
 }
 
-func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, filter justgrep.Filter, progress *justgrep.ProgressState) {
+func searchLogs(
+	args *arguments,
+	err error,
+	api justgrep.JustlogAPI,
+	filter justgrep.Filter,
+	progress *justgrep.ProgressState,
+) {
 	nextDate := args.endTime
 	ctx, cancel := context.WithCancel(context.Background())
 	var channel string
@@ -323,25 +345,29 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, filter just
 			)
 		}
 		if *args.progressJson {
-			_ = json.NewEncoder(os.Stderr).Encode(progressUpdate{
-				Type:       progressNextStep,
-				Found:      progress.TotalResults[justgrep.ResultOk],
-				Channel:    channel,
-				NextDate:   nextDate.Format(time.RFC3339),
-				TotalSteps: totalSteps,
-				LeftSteps:  stepsLeft,
-				Progress:   *progress,
-			})
+			_ = json.NewEncoder(os.Stderr).Encode(
+				progressUpdate{
+					Type:       progressNextStep,
+					Found:      progress.TotalResults[justgrep.ResultOk],
+					Channel:    channel,
+					NextDate:   nextDate.Format(time.RFC3339),
+					TotalSteps: totalSteps,
+					LeftSteps:  stepsLeft,
+					Progress:   *progress,
+				},
+			)
 		}
 		download := make(chan *justgrep.Message)
 		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress)
 		if err != nil {
 			if *args.progressJson {
-				_ = json.NewEncoder(os.Stderr).Encode(errorReport{
-					Type:     errorWhileFetching,
-					Error:    err.Error(),
-					Progress: *progress,
-				})
+				_ = json.NewEncoder(os.Stderr).Encode(
+					errorReport{
+						Type:     errorWhileFetching,
+						Error:    err.Error(),
+						Progress: *progress,
+					},
+				)
 			} else {
 				_, _ = fmt.Fprintf(os.Stderr, "Error while fetching logs: %s\n", err)
 			}

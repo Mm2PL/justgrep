@@ -62,7 +62,13 @@ func (m Message) Serialize() (output string) {
 	return // this should only be hit if there are no args
 }
 func (m Message) String() string {
-	return fmt.Sprintf("Message{Prefix: %q, Action: %q, Args: %q, Timestamp: %s}", m.Prefix, m.Action, m.Args, m.Timestamp)
+	return fmt.Sprintf(
+		"Message{Prefix: %q, Action: %q, Args: %q, Timestamp: %s}",
+		m.Prefix,
+		m.Action,
+		m.Args,
+		m.Timestamp,
+	)
 }
 
 func NewMessage(text string) (*Message, error) {
