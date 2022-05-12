@@ -69,30 +69,7 @@ func fetch(ctx context.Context, url string, output chan *Message, progress *Prog
 	return nil
 }
 
-// deprecated
 func FetchForDate(
-	api JustlogAPI,
-	date time.Time,
-	output chan *Message,
-	canceled *bool,
-	progress *ProgressState,
-) (time.Time, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		t := time.NewTicker(10 * time.Millisecond)
-		select {
-		case <-t.C:
-			if *canceled {
-				cancel()
-				break
-			}
-		}
-	}()
-	defer cancel()
-	return FetchForDateWithContext(ctx, api, date, output, progress)
-}
-
-func FetchForDateWithContext(
 	ctx context.Context,
 	api JustlogAPI,
 	date time.Time,
@@ -153,11 +130,7 @@ type channelsResp struct {
 	} `json:"channels"`
 }
 
-func GetChannelsFromJustLog(url string) ([]string, error) {
-	return GetChannelsFromJustLogWithContext(context.Background(), url)
-}
-
-func GetChannelsFromJustLogWithContext(ctx context.Context, url string) ([]string, error) {
+func GetChannelsFromJustLog(ctx context.Context, url string) ([]string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url+"/channels", nil)
 	if err != nil {
 		return nil, err

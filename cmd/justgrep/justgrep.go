@@ -213,7 +213,7 @@ func main() {
 	if !*args.recursive {
 		channelsToSearch = strings.Split(*args.channel, ",")
 	} else {
-		channelsToSearch, err = justgrep.GetChannelsFromJustLog(*args.url)
+		channelsToSearch, err = justgrep.GetChannelsFromJustLog(context.Background(), *args.url)
 		if err != nil {
 			_, err := fmt.Fprintf(os.Stderr, "Error while fetching channels from justlog: %s", err)
 			if err != nil {
@@ -335,7 +335,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 				Progress:   *progress,
 			})
 		}
-		nextDate, err = justgrep.FetchForDateWithContext(ctx, api, nextDate, download, progress)
+		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress)
 		if err != nil {
 			if *args.progressJson {
 				_ = json.NewEncoder(os.Stderr).Encode(errorReport{
