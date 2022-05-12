@@ -67,8 +67,9 @@ func (res FilterResult) String() string {
 	}
 }
 
-// StreamFilter performs Filter on every message from the input and puts every message that matched onto the output,
-// if the max count of results is reached cancel() is called and results[ResultsMaxCountReached] is set.
+// StreamFilter performs Filter on every message from the input channel and puts every message that matched onto the
+// output channel, if the max count of results is reached cancel() is called and results[ResultsMaxCountReached] is set.
+// If the messages are too old, cancel() is called and results[ResultDate] is set.
 func (f Filter) StreamFilter(
 	cancel context.CancelFunc,
 	input chan *Message,
