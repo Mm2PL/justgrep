@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/Mm2PL/justgrep"
 	"math"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/Mm2PL/justgrep"
 )
 
 type progressUpdate struct {
