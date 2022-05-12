@@ -1,6 +1,7 @@
 package justgrep
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 	"time"
@@ -66,16 +67,22 @@ func (res FilterResult) String() string {
 	}
 }
 
-func (f Filter) StreamFilter(input chan *Message, output chan *Message, cancelled *bool) []int {
+// StreamFilter performs Filter on every message from the input and puts every message that matched onto the output,
+// if the max count of results is reached cancel() is called and results[ResultsMaxCountReached] is set.
+func (f Filter) StreamFilter(
+	cancel context.CancelFunc,
+	input chan *Message,
+	output chan *Message,
+) []int {
 	results := make([]int, ResultCount)
-	for {
-		if f.Count != 0 && results[ResultOk] >= f.Count {
-			results[ResultMaxCountReached] = 1
-			*cancelled = true
+	for msg := range input {
+		if msg == nil {
 			break
 		}
-		msg := <-input
-		if msg == nil {
+
+		if f.Count != 0 && results[ResultOk] >= f.Count {
+			results[ResultMaxCountReached] = 1
+			cancel() // HTTP request is still going, kill it
 			break
 		}
 		result := f.Filter(msg)
@@ -84,13 +91,15 @@ func (f Filter) StreamFilter(input chan *Message, output chan *Message, cancelle
 			output <- msg
 		}
 		if result == ResultDate {
-			*cancelled = true
+			cancel() // HTTP request is still going, kill it
 			break
 		}
 	}
+	close(output)
 	return results
 }
 
+// Filter performs all checks necessary to know if a given msg matches the Filter predicates.
 func (f Filter) Filter(msg *Message) FilterResult {
 	if msg.Timestamp.After(f.EndDate) {
 		return ResultDate

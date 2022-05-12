@@ -2,6 +2,7 @@ package justgrep
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,17 +26,21 @@ type ProgressState struct {
 	BeginTime time.Time `json:"begin_time"`
 }
 
-func fetch(url string, output chan *Message, cancel *bool, progress *ProgressState) error {
-	req, err := http.NewRequest("GET", url, nil)
+func fetch(ctx context.Context, url string, output chan *Message, progress *ProgressState) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		if ctx.Err() == context.Canceled {
+			return nil
+		}
 		return err
 	}
 	if resp.StatusCode != 200 {
+		defer resp.Body.Close()
 		scanner := bufio.NewScanner(resp.Body)
 		if scanner.Scan() {
 			return errors.New(fmt.Sprintf("justlog instance responded with %d: %q", resp.StatusCode, scanner.Text()))
@@ -58,18 +63,24 @@ func fetch(url string, output chan *Message, cancel *bool, progress *ProgressSta
 			}
 			progress.CountBytes += len(msg.Raw)
 			output <- msg
-			if *cancel {
+			if ctx.Err() != nil {
 				break
 			}
 		}
-		output <- nil
+		close(output)
 	}()
 	return nil
 }
 
-func FetchForDate(api JustlogAPI, date time.Time, output chan *Message, canceled *bool, progress *ProgressState) (time.Time, error) {
+func FetchForDate(
+	ctx context.Context,
+	api JustlogAPI,
+	date time.Time,
+	output chan *Message,
+	progress *ProgressState,
+) (time.Time, error) {
 	url := api.MakeURL(date)
-	err := fetch(url, output, canceled, progress)
+	err := fetch(ctx, url, output, progress)
 	if err != nil {
 		return time.Time{}, err
 	} else {
@@ -122,8 +133,8 @@ type channelsResp struct {
 	} `json:"channels"`
 }
 
-func GetChannelsFromJustLog(url string) ([]string, error) {
-	req, err := http.NewRequest("GET", url+"/channels", nil)
+func GetChannelsFromJustLog(ctx context.Context, url string) ([]string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url+"/channels", nil)
 	if err != nil {
 		return nil, err
 	}
