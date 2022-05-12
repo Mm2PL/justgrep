@@ -67,18 +67,9 @@ func (res FilterResult) String() string {
 	}
 }
 
-// deprecated
-func (f Filter) StreamFilter(input chan *Message, output chan *Message, cancelled *bool) []int {
-	return f.StreamFilterWithContext(
-		func() {
-			*cancelled = true
-		}, input, output,
-	)
-}
-
-// StreamFilterWithContext performs Filter on every message from the input and puts every message that matched onto the output,
+// StreamFilter performs Filter on every message from the input and puts every message that matched onto the output,
 // if the max count of results is reached cancel() is called and results[ResultsMaxCountReached] is set.
-func (f Filter) StreamFilterWithContext(
+func (f Filter) StreamFilter(
 	cancel context.CancelFunc,
 	input chan *Message,
 	output chan *Message,
