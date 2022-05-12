@@ -166,8 +166,6 @@ func main() {
 		return
 	}
 
-	download := make(chan *justgrep.Message)
-
 	var userRegex *regexp.Regexp
 	var negativeRegex *regexp.Regexp
 	matchMode := justgrep.DontMatch
@@ -247,7 +245,7 @@ func main() {
 		} else {
 			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: *args.url}
 		}
-		searchLogs(args, err, api, download, filter, progress)
+		searchLogs(args, err, api, filter, progress)
 	}
 	if *args.verbose {
 		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
@@ -284,7 +282,7 @@ func makeProgressBar(totalSteps float64, stepsLeft float64) string {
 	return fmt.Sprintf("[%s>%s] %.2f%%", done, left, fracDone*100)
 }
 
-func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download chan *justgrep.Message, filter justgrep.Filter, progress *justgrep.ProgressState) {
+func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, filter justgrep.Filter, progress *justgrep.ProgressState) {
 	nextDate := args.endTime
 	ctx, cancel := context.WithCancel(context.Background())
 	var channel string
@@ -335,6 +333,7 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 				Progress:   *progress,
 			})
 		}
+		download := make(chan *justgrep.Message)
 		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress)
 		if err != nil {
 			if *args.progressJson {
@@ -352,14 +351,9 @@ func searchLogs(args *arguments, err error, api justgrep.JustlogAPI, download ch
 		filtered := make(chan *justgrep.Message)
 		var results []int
 		go func() {
-			results = filter.StreamFilterWithContext(cancel, download, filtered)
-			filtered <- nil
+			results = filter.StreamFilter(cancel, download, filtered)
 		}()
-		for {
-			msg := <-filtered
-			if msg == nil {
-				break
-			}
+		for msg := range filtered {
 			fmt.Println(msg.Raw)
 		}
 

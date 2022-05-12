@@ -75,14 +75,13 @@ func (f Filter) StreamFilter(
 	output chan *Message,
 ) []int {
 	results := make([]int, ResultCount)
-	for {
-		if f.Count != 0 && results[ResultOk] >= f.Count {
-			results[ResultMaxCountReached] = 1
-			cancel()
+	for msg := range input {
+		if msg == nil {
 			break
 		}
-		msg := <-input
-		if msg == nil {
+
+		if f.Count != 0 && results[ResultOk] >= f.Count {
+			results[ResultMaxCountReached] = 1
 			break
 		}
 		result := f.Filter(msg)
@@ -91,6 +90,10 @@ func (f Filter) StreamFilter(
 			output <- msg
 		}
 	}
+	if results[ResultMaxCountReached] != 0 {
+		cancel() // HTTP request is still going, kill it
+	}
+	close(output)
 	return results
 }
 
