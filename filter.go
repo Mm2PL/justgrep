@@ -82,6 +82,7 @@ func (f Filter) StreamFilter(
 
 		if f.Count != 0 && results[ResultOk] >= f.Count {
 			results[ResultMaxCountReached] = 1
+			cancel() // HTTP request is still going, kill it
 			break
 		}
 		result := f.Filter(msg)
@@ -90,12 +91,9 @@ func (f Filter) StreamFilter(
 			output <- msg
 		}
 		if result == ResultDate {
-			*cancelled = true
+			cancel() // HTTP request is still going, kill it
 			break
 		}
-	}
-	if results[ResultMaxCountReached] != 0 {
-		cancel() // HTTP request is still going, kill it
 	}
 	close(output)
 	return results
