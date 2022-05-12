@@ -89,6 +89,10 @@ func (f Filter) StreamFilter(
 		if result == ResultOk {
 			output <- msg
 		}
+		if result == ResultDate {
+			*cancelled = true
+			break
+		}
 	}
 	if results[ResultMaxCountReached] != 0 {
 		cancel() // HTTP request is still going, kill it
