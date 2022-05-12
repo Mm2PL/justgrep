@@ -34,9 +34,6 @@ func fetch(ctx context.Context, url string, output chan *Message, progress *Prog
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return nil
-		}
 		return err
 	}
 	if resp.StatusCode != 200 {
