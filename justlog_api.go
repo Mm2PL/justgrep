@@ -26,12 +26,11 @@ type ProgressState struct {
 	BeginTime time.Time `json:"begin_time"`
 }
 
-func fetch(ctx context.Context, url string, output chan *Message, progress *ProgressState) error {
+func fetch(ctx context.Context, url string, client *http.Client, output chan *Message, progress *ProgressState) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
-	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -75,9 +74,10 @@ func FetchForDate(
 	date time.Time,
 	output chan *Message,
 	progress *ProgressState,
+	client *http.Client,
 ) (time.Time, error) {
 	url := api.MakeURL(date)
-	err := fetch(ctx, url, output, progress)
+	err := fetch(ctx, url, client, output, progress)
 	if err != nil {
 		return time.Time{}, err
 	} else {
@@ -151,12 +151,11 @@ type channelsResp struct {
 	} `json:"channels"`
 }
 
-func GetChannelsFromJustLog(ctx context.Context, url string) ([]string, error) {
+func GetChannelsFromJustLog(ctx context.Context, client *http.Client, url string) ([]string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url+"/channels", nil)
 	if err != nil {
 		return nil, err
 	}
-	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

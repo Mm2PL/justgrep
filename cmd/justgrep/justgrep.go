@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"math"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -128,6 +129,7 @@ const errorWhileFetching = "fetchError"
 const summaryFinished = "summaryFinished"
 
 var gitCommit = "[unavailable]"
+var httpClient = http.Client{}
 
 func main() {
 	args := &arguments{}
@@ -223,7 +225,7 @@ func main() {
 	if !*args.recursive {
 		channelsToSearch = strings.Split(*args.channel, ",")
 	} else {
-		channelsToSearch, err = justgrep.GetChannelsFromJustLog(context.Background(), *args.url)
+		channelsToSearch, err = justgrep.GetChannelsFromJustLog(context.Background(), &httpClient, *args.url)
 		if err != nil {
 			_, err := fmt.Fprintf(os.Stderr, "Error while fetching channels from justlog: %s", err)
 			if err != nil {
@@ -373,7 +375,7 @@ func searchLogs(
 			)
 		}
 		download := make(chan *justgrep.Message)
-		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress)
+		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress, &httpClient)
 		if err != nil {
 			if *args.progressJson {
 				_ = json.NewEncoder(os.Stderr).Encode(
