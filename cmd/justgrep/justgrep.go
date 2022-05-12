@@ -266,6 +266,21 @@ func main() {
 		for result, count := range progress.TotalResults {
 			_, _ = fmt.Fprintf(os.Stderr, " - %s => %d\n", justgrep.FilterResult(result), count)
 		}
+		const Mega = 1000.0 * 1000.0
+		const Milli = 0.001
+		timeTaken := time.Now().Sub(progress.BeginTime)
+		_, _ = fmt.Fprintf(
+			os.Stderr,
+			"Processed %.2f MB (%.2f MB/s)\n"+
+				"Lines processed: %d\n"+
+				"Average line length: %d\n"+
+				"Time taken: %s\n",
+			float64(progress.CountBytes)/Mega,
+			float64(progress.CountBytes)/float64(timeTaken.Milliseconds())/Milli/Mega,
+			progress.CountLines,
+			progress.CountBytes/progress.CountLines,
+			timeTaken.Truncate(time.Second),
+		)
 	}
 	if *args.progressJson {
 		res := make(map[string]int)
