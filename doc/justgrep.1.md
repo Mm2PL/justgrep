@@ -108,14 +108,14 @@ This tool searches the desired <i>justlog instance</i> for a regular expression
 </dl>
 <dl class="Bl-tag">
   <dt><b>-v</b></dt>
-  <dd>Shows you progress info on stderr.
+  <dd>Shows you progress info on stderr. Not allowed with <i>-progress-json</i>.
     <div class="Pp"></div>
   </dd>
 </dl>
 <dl class="Bl-tag">
   <dt><b>-progress-json</b></dt>
   <dd>Returns the same information as <i>-v</i> but in JSON format for machine
-      processing. Also uses stderr.
+      processing. Also uses stderr. Not allowed with <i>-v</i>.
     <div class="Pp"></div>
   </dd>
 </dl>

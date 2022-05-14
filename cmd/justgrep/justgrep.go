@@ -99,6 +99,10 @@ func (args *arguments) validateAndProcessFlags() (valid bool) {
 		_, _ = fmt.Fprintln(os.Stderr, "You need to pass the -start argument.")
 		valid = false
 	}
+	if *args.verbose && *args.progressJson {
+		_, _ = fmt.Fprintln(os.Stderr, "Passing both -v and -progress-json doesn't make sense because they use stderr.")
+		valid = false
+	}
 	// show missing arguments and that's it
 	if !valid {
 		return
@@ -155,8 +159,8 @@ func main() {
 	args.url = flag.String("url", "http://localhost:8025", "Justlog instance URL")
 	args.maxResults = flag.Int("max", 0, "How many results do you want? 0 for unlimited")
 
-	args.verbose = flag.Bool("v", false, "Spam stdout a little more")
-	args.progressJson = flag.Bool("progress-json", false, "Send JSON progress updates to stderr")
+	args.verbose = flag.Bool("v", false, "Show human-readable progress information")
+	args.progressJson = flag.Bool("progress-json", false, "Send JSON progress updates to stderr, not allowed with -v.")
 	args.recursive = flag.Bool("r", false, "Run search on all channels.")
 	flag.Usage = func() {
 		fmt.Fprintf(
