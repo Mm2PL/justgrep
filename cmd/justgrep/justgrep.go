@@ -265,7 +265,7 @@ func main() {
 		} else {
 			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: *args.url}
 		}
-		searchLogs(args, err, api, filter, progress)
+		searchLogs(args, api, filter, progress)
 	}
 	if *args.verbose {
 		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
