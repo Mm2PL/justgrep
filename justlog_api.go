@@ -31,6 +31,7 @@ func fetch(ctx context.Context, url string, client *http.Client, output chan *Me
 	if err != nil {
 		return err
 	}
+	req.Header.Set("User-Agent", UserAgent)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -156,10 +157,12 @@ func GetChannelsFromJustLog(ctx context.Context, client *http.Client, url string
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", UserAgent)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	output := channelsResp{}
 	err = json.NewDecoder(resp.Body).Decode(&output)
 	if err != nil {
@@ -175,3 +178,5 @@ func GetChannelsFromJustLog(ctx context.Context, client *http.Client, url string
 func (api ChannelJustlogAPI) GetApproximateOffset() time.Duration {
 	return time.Hour * 24
 }
+
+var UserAgent = "justgrep/1.0 (log-searcher)"
