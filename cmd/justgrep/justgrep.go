@@ -321,7 +321,6 @@ func makeProgressBar(totalSteps float64, stepsLeft float64) string {
 
 func searchLogs(
 	args *arguments,
-	err error,
 	api justgrep.JustlogAPI,
 	filter justgrep.Filter,
 	progress *justgrep.ProgressState,
@@ -379,6 +378,7 @@ func searchLogs(
 			)
 		}
 		download := make(chan *justgrep.Message)
+		var err error
 		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress, &httpClient)
 		if err != nil {
 			if *args.progressJson {
