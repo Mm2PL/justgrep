@@ -269,6 +269,11 @@ func main() {
 	}
 	if *args.verbose {
 		_, _ = fmt.Fprintf(os.Stderr, "Summary:\n")
+		if progress.CountLines == 0 {
+			// no lines fetched at all
+			fmt.Fprintf(os.Stderr, "Nothing here. No lines were processed.\n")
+			return
+		}
 		for result, count := range progress.TotalResults {
 			_, _ = fmt.Fprintf(os.Stderr, " - %s => %d\n", justgrep.FilterResult(result), count)
 		}
