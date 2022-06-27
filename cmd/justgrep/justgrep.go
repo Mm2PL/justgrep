@@ -412,7 +412,7 @@ func searchLogs(
 		for result, count := range results {
 			progress.TotalResults[result] += count
 		}
-		if results[justgrep.ResultDate] != 0 || results[justgrep.ResultMaxCountReached] != 0 {
+		if results[justgrep.ResultDateBeforeStart] != 0 || results[justgrep.ResultMaxCountReached] != 0 {
 			break
 		}
 	}

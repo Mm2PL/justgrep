@@ -39,7 +39,8 @@ type FilterResult uint8
 
 const (
 	ResultOk FilterResult = iota
-	ResultDate
+	ResultDateBeforeStart
+	ResultDateAfterEnd
 	ResultType
 	ResultContent
 	ResultUser
@@ -52,8 +53,10 @@ func (res FilterResult) String() string {
 	switch res {
 	case ResultOk:
 		return "ok"
-	case ResultDate:
-		return "date"
+	case ResultDateBeforeStart:
+		return "date before start"
+	case ResultDateAfterEnd:
+		return "date after end"
 	case ResultType:
 		return "type"
 	case ResultContent:
@@ -69,7 +72,7 @@ func (res FilterResult) String() string {
 
 // StreamFilter performs Filter on every message from the input channel and puts every message that matched onto the
 // output channel, if the max count of results is reached cancel() is called and results[ResultsMaxCountReached] is set.
-// If the messages are too old, cancel() is called and results[ResultDate] is set.
+// If the messages are too old, cancel() is called and results[ResultDateBeforeStart] is set.
 func (f Filter) StreamFilter(
 	cancel context.CancelFunc,
 	input chan *Message,
@@ -92,7 +95,7 @@ func (f Filter) StreamFilter(
 		if result == ResultOk {
 			output <- msg
 		}
-		if result == ResultDate {
+		if result == ResultDateBeforeStart {
 			cancel() // HTTP request is still going, kill it
 			break
 		}
@@ -104,11 +107,11 @@ func (f Filter) StreamFilter(
 // Filter performs all checks necessary to know if a given msg matches the Filter predicates.
 func (f Filter) Filter(msg *Message) FilterResult {
 	if msg.Timestamp.After(f.EndDate) {
-		return ResultDate
+		return ResultDateAfterEnd
 	}
 
 	if msg.Timestamp.Before(f.StartDate) {
-		return ResultDate
+		return ResultDateBeforeStart
 	}
 	if f.HasMessageType {
 		ok := false
