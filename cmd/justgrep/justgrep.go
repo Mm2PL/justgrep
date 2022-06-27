@@ -66,6 +66,8 @@ type arguments struct {
 
 	messageTypes    []string
 	messageTypesRaw *string
+
+	noEnv *bool
 }
 
 func parseTime(input string) (output time.Time, err error) {
@@ -135,6 +137,8 @@ const summaryFinished = "summaryFinished"
 var gitCommit = "[unavailable]"
 var httpClient = http.Client{}
 
+const EnvDefaultInstances = "JUSTGREP_DEFAULT_INSTANCES"
+
 func main() {
 	args := &arguments{}
 	args.user = flag.String("user", "", "Target user")
@@ -156,12 +160,14 @@ func main() {
 	args.messageRegex = flag.String("regex", "", "Message Regex")
 	args.start = flag.String("start", "", "Start time")
 	args.end = flag.String("end", "", "End time")
-	args.url = flag.String("url", "http://localhost:8025", "Justlog instance URL")
+	args.url = flag.String("url", "", "Justlog instance URL")
 	args.maxResults = flag.Int("max", 0, "How many results do you want? 0 for unlimited")
 
 	args.verbose = flag.Bool("v", false, "Show human-readable progress information")
 	args.progressJson = flag.Bool("progress-json", false, "Send JSON progress updates to stderr, not allowed with -v.")
 	args.recursive = flag.Bool("r", false, "Run search on all channels.")
+
+	args.noEnv = flag.Bool("no-env", false, "Disables reading environment variables like JUSTGREP_DEFAULT_INSTANCES")
 	flag.Usage = func() {
 		fmt.Fprintf(
 			flag.CommandLine.Output(),
@@ -176,6 +182,68 @@ func main() {
 	flagsAreValid := args.validateAndProcessFlags()
 	if !flagsAreValid {
 		os.Exit(1)
+	}
+
+	var defaultInstancesEnv string
+	defaultInstances := []string{*args.url}
+	instanceListSource := "-url"
+
+	if *args.url == "" && !*args.noEnv {
+		defaultInstancesEnv = os.Getenv(EnvDefaultInstances)
+		defaultInstances = strings.Split(defaultInstancesEnv, " ")
+		instanceListSource = EnvDefaultInstances
+	}
+
+	if len(defaultInstances) == 1 && defaultInstances[0] == "" {
+		defaultInstances = []string{"http://localhost:8025"}
+		if *args.verbose {
+			fmt.Fprintf(
+				os.Stderr,
+				"Assuming you wanted to use %s as the justlog instance. Use -url or set the %q env variable.\n",
+				defaultInstances[0],
+				EnvDefaultInstances,
+			)
+		}
+	}
+
+	if *args.recursive && len(defaultInstances) > 1 {
+		fmt.Fprintf(os.Stderr, "Please provide a single -url for a search of every channel (-r).\n")
+		fmt.Fprintf(
+			os.Stderr,
+			"Used instance list from %s:\n"+
+				"- %s\n",
+			instanceListSource,
+			strings.Join(defaultInstances, "\n- "),
+		)
+		os.Exit(1)
+	}
+
+	justlogUrl := ""
+
+	if *args.recursive {
+		justlogUrl = defaultInstances[0]
+	} else {
+	instanceLoop:
+		for _, instance := range defaultInstances {
+			chns, err := justgrep.GetChannelsFromJustLog(context.Background(), &httpClient, instance)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Fetching channels from %q failed: %s\n", instance, err.Error())
+				continue instanceLoop
+			}
+			for _, chn := range chns {
+				if *args.channel == chn {
+					justlogUrl = instance
+					break instanceLoop
+				}
+			}
+		}
+		if justlogUrl == "" {
+			fmt.Fprintf(os.Stderr, "No justlog instance has the channel %q\n", *args.channel)
+			os.Exit(1)
+		}
+		if *args.verbose {
+			fmt.Fprintf(os.Stderr, "Picked justlog: %s\n", justlogUrl)
+		}
 	}
 
 	messageExpr, err := regexp.Compile(*args.messageRegex)
@@ -229,7 +297,7 @@ func main() {
 	if !*args.recursive {
 		channelsToSearch = strings.Split(*args.channel, ",")
 	} else {
-		channelsToSearch, err = justgrep.GetChannelsFromJustLog(context.Background(), &httpClient, *args.url)
+		channelsToSearch, err = justgrep.GetChannelsFromJustLog(context.Background(), &httpClient, justlogUrl)
 		if err != nil {
 			_, err := fmt.Fprintf(os.Stderr, "Error while fetching channels from justlog: %s", err)
 			if err != nil {
@@ -261,9 +329,9 @@ func main() {
 		}
 		var api justgrep.JustlogAPI
 		if *args.user != "" && !(*args.userIsRegex) {
-			api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: *args.url}
+			api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: justlogUrl}
 		} else {
-			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: *args.url}
+			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: justlogUrl}
 		}
 		searchLogs(args, api, filter, progress)
 	}
