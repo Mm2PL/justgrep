@@ -70,7 +70,7 @@ Searches messages for the pattern. This option is required.
 
 .TP
 .BR \-url\  justlog\ instance\ url
-Selects your desired justlog instance. By default it's \fIhttp://localhost:8025\fP, the default listen address for justlog.
+Selects your desired justlog instance. If not specified, it takes the value of \fIJUSTGREP_DEFAULT_INSTANCES\fP. If that isn't present (or \fI-no-env\fP was passed), justgrep will use \fIhttp://localhost:8025\fP, the default listen address for justlog.
 
 .TP
 .BR \-v
@@ -81,6 +81,10 @@ Shows you progress info on stderr. Not allowed with \fI-progress-json\fP.
 Returns the same information as \fI-v\fP but in JSON format for machine processing. Also uses stderr. Not allowed with \fI-v\fP.
 
 .TP
+.BR \-no-env
+Makes justgrep ignore any environment variables.
+
+.TP
 .BR \-msg-only
 Deprecated: use \fB-msg-types PRIVMSG\fP instead.
 Makes \fBjustgrep\fP return only user chat messages, \fIPRIVMSG\fPs.
@@ -88,6 +92,13 @@ Makes \fBjustgrep\fP return only user chat messages, \fIPRIVMSG\fPs.
 .TP
 .BR \-msg-types\  comma\ separated\ list\ of\ types
 Makes justgrep return only certain messages based on the IRC command/action. Putting the most common types first might speed up your search slightly.
+
+.SH ENVIRONMENT VARIABLES
+.TP
+
+.TP
+.BR JUSTGREP_DEFAULT_INSTANCES
+This variable can contain a space-separated list of your preferred justlog instances. It will use one of these when \fI-url\fP isn't given.
 
 .SH EXAMPLES
 Fetch all messages matching \fIpajaS\fP from \fI2021-12-01\fP to \fI2021-12-07\fP (inclusive) from channel \fIpajlada\fP from \fIjustlog instance\fP:
