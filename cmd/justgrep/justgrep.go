@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -207,13 +208,23 @@ func main() {
 	}
 
 	if *args.recursive && len(defaultInstances) > 1 {
+		instancesSafe := []string{}
+		for _, instance := range defaultInstances {
+			itext := ""
+			u, err := url.Parse(instance)
+			if err != nil {
+				itext = "[failed to url parse, hiding to not show any secrets]"
+			}
+			itext = u.Redacted()
+			instancesSafe = append(instancesSafe, itext)
+		}
 		fmt.Fprintf(os.Stderr, "Please provide a single -url for a search of every channel (-r).\n")
 		fmt.Fprintf(
 			os.Stderr,
 			"Used instance list from %s:\n"+
 				"- %s\n",
 			instanceListSource,
-			strings.Join(defaultInstances, "\n- "),
+			strings.Join(instancesSafe, "\n- "),
 		)
 		os.Exit(1)
 	}
