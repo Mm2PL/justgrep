@@ -317,6 +317,10 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	// fix name changes and USERNOTICEs not showing up when using per-user log endpoint
+	if *args.user != "" && !(*args.userIsRegex) {
+		filter.UserMatchType = justgrep.DontMatch
+	}
 
 	progress := &justgrep.ProgressState{
 		TotalResults: make([]int, justgrep.ResultCount),
