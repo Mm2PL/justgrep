@@ -108,6 +108,11 @@ func TestNewMessage(t *testing.T) {
 			"tag": "spaces exist as do\nnew\rlines and;semicolons",
 		},
 	)
+	m, err = NewMessage("@emote-only=0;followers-only=-1;r9k=0;room-id=111024753;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #boring_nick")
+	assert(t, "error", err, nil)
+	assert(t, "Action", m.Action, "ROOMSTATE")
+	assert(t, "Prefix", m.Prefix, "tmi.twitch.tv")
+	assertStrSlc(t, "Args", m.Args, []string{"#boring_nick"})
 }
 
 func BenchmarkNewMessage(b *testing.B) {
