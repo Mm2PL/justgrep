@@ -118,9 +118,11 @@ func NewMessage(text string) (*Message, error) {
 			nextSpace := strings.Index(cpy, " ")
 			if nextSpace == -1 {
 				// has to be last arg!
-				nextSpace = len(cpy) - 1
-			}
-			if cpy == "" {
+				if cpy[0] == ':' {
+					output.Args = append(output.Args, cpy[1:])
+				} else {
+					output.Args = append(output.Args, cpy)
+				}
 				break
 			}
 			currentArg := cpy[:nextSpace]
@@ -131,6 +133,9 @@ func NewMessage(text string) (*Message, error) {
 			}
 			output.Args = append(output.Args, currentArg)
 			cpy = cpy[nextSpace+1:]
+			if cpy == "" {
+				break
+			}
 		}
 	}
 	ts, hasTs := output.Tags["tmi-sent-ts"]
