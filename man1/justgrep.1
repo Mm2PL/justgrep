@@ -52,7 +52,8 @@ T}
 .BR \-user\  name
 Search logs for a single user. If \fI-uregex\fP is used in combination,
 \fBname\fP is treated as a regular expression. It's worth noting that search a
-single user's logs is much faster than a whole channel.
+single user's logs is much faster than a whole channel. If the \fBname\fP isn't
+a regex and begins with \fI#\fP, it will be treated as a user id.
 
 .TP
 .BR \-notuser\  name

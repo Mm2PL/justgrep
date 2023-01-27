@@ -344,7 +344,11 @@ func main() {
 		}
 		var api justgrep.JustlogAPI
 		if *args.user != "" && !(*args.userIsRegex) {
-			api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: justlogUrl}
+			if (*args.user)[0] == '#' {
+				api = &justgrep.UserJustlogAPI{User: (*args.user)[1:], Channel: channel, URL: justlogUrl, IsId: true}
+			} else {
+				api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: justlogUrl}
+		}
 		} else {
 			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: justlogUrl}
 		}

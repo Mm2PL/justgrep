@@ -82,7 +82,9 @@ This tool searches the desired <i>justlog instance</i> for a regular expression
   <dt><b>-notuser&#x00A0;</b>name</dt>
   <dd>Ignores user identified by <i>name</i> from log searches. If
       <i>-uregex</i> is used in combination, <b>name</b> is treated as a regular
-      expression.
+      expression. It's worth noting that search a single user's logs is much
+      faster than a whole channel. If the <b>name</b> isn't a regex and begins
+      with <i>#</i>, it will be treated as a user id.
     <div class="Pp"></div>
   </dd>
 </dl>
