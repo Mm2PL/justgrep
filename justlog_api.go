@@ -17,10 +17,15 @@ import (
 )
 
 type JustlogAPI interface {
+	// MakeURL creates a URL to download the data from justlog
 	MakeURL(date time.Time) string
 
+	// NextLogFile is deprecated. It returns currentDate.Add(api.GetApproximateOffset)
 	NextLogFile(currentDate time.Time) time.Time
 
+	// GetApproximateOffset describes roughly how often new files are made in justlog for this api.
+	// This function shouldn't be treated as anything more than a UI suggestion, use GetAvailableLogs for precise data
+	// instead
 	GetApproximateOffset() time.Duration
 
 	// GetAvailableLogs fetches logs available from justlog
