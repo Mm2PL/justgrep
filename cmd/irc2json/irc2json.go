@@ -13,10 +13,12 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	encoder := json.NewEncoder(os.Stdout)
 
+	i := 0
 	for scanner.Scan() {
+		i += 1
 		msg, err := justgrep.NewMessage(scanner.Text())
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Failed to irc parse message: %s\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Line %d: Failed to irc parse message: %s\n", i, err)
 			os.Exit(1)
 		}
 		err = encoder.Encode(msg)
