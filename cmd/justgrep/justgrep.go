@@ -348,7 +348,7 @@ func main() {
 				api = &justgrep.UserJustlogAPI{User: (*args.user)[1:], Channel: channel, URL: justlogUrl, IsId: true}
 			} else {
 				api = &justgrep.UserJustlogAPI{User: *args.user, Channel: channel, URL: justlogUrl}
-		}
+			}
 		} else {
 			api = &justgrep.ChannelJustlogAPI{Channel: channel, URL: justlogUrl}
 		}
@@ -419,22 +419,42 @@ func searchLogs(
 ) {
 	nextDate := args.endTime
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	var channel string
-	step := api.GetApproximateOffset()
 	switch api.(type) {
 	default:
 		channel = fmt.Sprintf("[unknown] (%t)", api)
-		step = time.Hour * 24
 	case *justgrep.UserJustlogAPI:
 		channel = api.(*justgrep.UserJustlogAPI).Channel
 	case *justgrep.ChannelJustlogAPI:
 		channel = api.(*justgrep.ChannelJustlogAPI).Channel
 	}
-	totalSteps := float64(args.endTime.Sub(args.startTime) / step)
+	availableLogs, err := api.GetAvailableLogs(ctx, &httpClient)
+	if err != nil {
+		u, _ := url.Parse(*args.url)
+		fmt.Fprintf(
+			os.Stderr,
+			"Failed to fetch available logs on %s: %s",
+			u.Redacted(),
+			err,
+		)
+		os.Exit(1)
+	}
 
-	defer cancel()
-	for {
-		stepsLeft := float64(nextDate.Sub(args.startTime) / step)
+	toFetch, err := availableLogs.Snip(args.startTime, args.endTime)
+	if err != nil {
+		u, _ := url.Parse(*args.url)
+		fmt.Fprintf(
+			os.Stderr,
+			"Host %s returned a malformed response for logs: %s",
+			u.Redacted(),
+			err,
+		)
+	}
+
+	totalSteps := len(toFetch)
+	for i, entry := range toFetch {
+		stepsLeft := totalSteps - i
 		if *args.verbose {
 			nowTime := time.Now()
 			timeTaken := float64(nowTime.Sub(progress.BeginTime) / time.Second)
@@ -447,8 +467,8 @@ func searchLogs(
 					"Processed %.2f MB (%d lines and counting)\n",
 				progress.TotalResults[justgrep.ResultOk],
 				channel,
-				nextDate.Format("2006-01-02"),
-				makeProgressBar(totalSteps, stepsLeft),
+				entry.ToDate().Format("2006-01-02"),
+				makeProgressBar(float64(totalSteps), float64(stepsLeft)),
 				progress.CountLines/int(timeTaken),
 				float64(progress.CountBytes/1000/1000)/timeTaken,
 
@@ -463,15 +483,21 @@ func searchLogs(
 					Found:      progress.TotalResults[justgrep.ResultOk],
 					Channel:    channel,
 					NextDate:   nextDate.Format(time.RFC3339),
-					TotalSteps: totalSteps,
-					LeftSteps:  stepsLeft,
+					TotalSteps: float64(totalSteps),
+					LeftSteps:  float64(stepsLeft),
 					Progress:   *progress,
 				},
 			)
 		}
 		download := make(chan *justgrep.Message)
-		var err error
-		nextDate, err = justgrep.FetchForDate(ctx, api, nextDate, download, progress, &httpClient)
+		err = justgrep.FetchForLogEntry(
+			ctx,
+			api,
+			entry,
+			download,
+			progress,
+			&httpClient,
+		)
 		if err != nil {
 			if *args.progressJson {
 				_ = json.NewEncoder(os.Stderr).Encode(
