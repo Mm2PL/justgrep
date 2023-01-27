@@ -94,6 +94,13 @@ func NewMessage(text string) (*Message, error) {
 			output.Tags[pair[:equalsIdx]] = unescapeValue(pair[equalsIdx+1:])
 		}
 		cpy = cpy[idx+1:]
+		// skip doubled spaces
+		for cpy != "" && cpy[0] == ' ' {
+			cpy = cpy[1:]
+		}
+		if cpy == "" {
+			return nil, errors.New("parser error: expected more data after tags but found nothing")
+		}
 	}
 	if cpy[0] == ':' {
 		prefixIdx := strings.Index(cpy, " ")
@@ -126,7 +133,11 @@ func NewMessage(text string) (*Message, error) {
 				break
 			}
 			currentArg := cpy[:nextSpace]
-			if currentArg[0] == ':' {
+			if currentArg == "" {
+				// double space, skip!
+				cpy = cpy[1:] // advance one char
+				continue
+			} else if currentArg[0] == ':' {
 				// last argument.
 				output.Args = append(output.Args, cpy[1:])
 				break
