@@ -232,10 +232,12 @@ func main() {
 	justlogUrl := ""
 
 	if *args.recursive {
-		justlogUrl = defaultInstances[0]
+		justlogUrl = cleanUrl(defaultInstances[0])
 	} else {
 	instanceLoop:
 		for _, instance := range defaultInstances {
+			instance = cleanUrl(instance)
+
 			chns, err := justgrep.GetChannelsFromJustLog(context.Background(), &httpClient, instance)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Fetching channels from %q failed: %s\n", instance, err.Error())
