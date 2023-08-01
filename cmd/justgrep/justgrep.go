@@ -140,6 +140,13 @@ var httpClient = http.Client{}
 
 const EnvDefaultInstances = "JUSTGREP_DEFAULT_INSTANCES"
 
+func cleanUrl(url string) (string) {
+	if strings.HasSuffix(url, "/") {
+		return url[:len(url)-1]
+	}
+	return url
+}
+
 func main() {
 	args := &arguments{}
 	args.user = flag.String("user", "", "Target user")
