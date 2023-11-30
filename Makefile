@@ -1,4 +1,4 @@
-all: justgrep irc2json
+all: justgrep irc2json irc2text
 
 install: all
 	echo "Installing binaries..."
@@ -14,3 +14,6 @@ justgrep: cmd/justgrep/justgrep.go
 
 irc2json: cmd/irc2json/irc2json.go
 	go build cmd/irc2json/irc2json.go
+
+irc2text: cmd/irc2json/irc2text.go
+	go build cmd/irc2text/irc2text.go
