@@ -18,15 +18,22 @@ func main() {
 			os.Exit(1)
 		}
 		if msg.Action == "PRIVMSG" {
-			fmt.Printf("[%s] %s %s: %s\n", msg.Timestamp.UTC().Format("2006-01-02 15:04:05"), msg.Args[0], msg.User, msg.Args[1])
+			fmt.Printf("[%s] %s ", msg.Timestamp.UTC().Format("2006-01-02 15:04:05"), msg.Args[0])
+			fmt.Printf("%s: %s\n", msg.User, msg.Args[1])
 		} else if msg.Action == "NOTICE" {
-			fmt.Printf("NOTICE %s %s\n", msg.Args[0], msg.Args[1])
+			fmt.Printf("[%s] %s ", msg.Timestamp.UTC().Format("2006-01-02 15:04:05"), msg.Args[0])
+			fmt.Printf("NOTICE %s\n", msg.Args[1])
 		} else if msg.Action == "CLEARCHAT" {
-			duration := msg.Tags["ban-duration"]
-			if duration == "" {
-				fmt.Printf("%s was permanently banned\n", msg.Args[1])
+			fmt.Printf("[%s] %s ", msg.Timestamp.UTC().Format("2006-01-02 15:04:05"), msg.Args[0])
+			if len(msg.Args) < 2 {
+				fmt.Println("Chat has been cleared")
 			} else {
-				fmt.Printf("%s was timed out for %s seconds\n", msg.Args[1], msg.Tags["ban-duration"])
+				duration := msg.Tags["ban-duration"]
+				if duration == "" {
+					fmt.Printf("%s was permanently banned\n", msg.Args[1])
+				} else {
+					fmt.Printf("%s was timed out for %s seconds\n", msg.Args[1], duration)
+				}
 			}
 		}
 	}
