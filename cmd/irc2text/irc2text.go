@@ -22,11 +22,15 @@ func main() {
 		} else if msg.Action == "NOTICE" {
 			fmt.Printf("NOTICE %s %s\n", msg.Args[0], msg.Args[1])
 		} else if msg.Action == "CLEARCHAT" {
-			duration := msg.Tags["ban-duration"]
-			if duration == "" {
-				fmt.Printf("%s was permanently banned\n", msg.Args[1])
+			if len(msg.Args) < 2 {
+				fmt.Println("Chat has been cleared")
 			} else {
-				fmt.Printf("%s was timed out for %s seconds\n", msg.Args[1], msg.Tags["ban-duration"])
+				duration := msg.Tags["ban-duration"]
+				if duration == "" {
+					fmt.Printf("%s was permanently banned\n", msg.Args[1])
+				} else {
+					fmt.Printf("%s was timed out for %s seconds\n", msg.Args[1], duration)
+				}
 			}
 		}
 	}
